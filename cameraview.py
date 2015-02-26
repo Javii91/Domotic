@@ -1,24 +1,48 @@
-import Ice
+import Ice, traceback
 import cv2
+import sys
+import jderobot
+import numpy
+import Image
 
+def data_to_image (data):
+  img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', "BGR")
+  pix = numpy.array(img)
+  return pix
 
 if __name__ == "__main__":
-  print "working"
-  cap = cv2.VideoCapture(0)
-  cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 360)
-  cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 240)
-  cv2.namedWindow("cam")
-  
 
-  while(cap.isOpened()):
-    ret, frame = cap.read()
+  status = 0
+  ic = None
+  try:
+    ic = Ice.initialize()    
+    obj = ic.stringToProxy('cameraA:default -h localhost -p 9999')
+    cv2.namedWindow("My CameraView (Python)")
+
+
+    while(1):
+      cam = jderobot.CameraPrx.checkedCast(obj)
+      data = cam.getImageData()
+      imagen = data_to_image (data)
+      cv2.imshow('My CameraView (Python)',imagen)
+      cv2.waitKey(30)
+      
+        
+    cv2.destroyAllWindows()
 
     
+  except:
+    traceback.print_exc()
+    status = 1
 
-    cv2.imshow('cam',frame)
-    k = cv2.waitKey(30) & 0xff
-    if k == 27:
-        break
+    
+  if ic:
+    try:
+      ic.destroy()
+    except:
+      traceback.print_exc()
+      status = 1
 
-  cap.release()
-  cv2.destroyAllWindows()
+  sys.exit(status)
+ 
+
