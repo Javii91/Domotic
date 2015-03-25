@@ -18,3 +18,5 @@ class Colors:
     return self.UNDERLINE + text + self.ENDC
   def green(self, text):
     return self.OKGREEN + text + self.ENDC
+  def fail(self, text):
+    return self.FAIL + text + self.ENDC

@@ -4,7 +4,7 @@ class Mod:
   name = ""
   code = ""
   mtype = ""
-  active = False
+  active = True
   
   def __init__(self, name, code, mtype):
     self.name = name
@@ -24,3 +24,9 @@ class Mod:
   def setInactive (self):
     self.active = False
     os.system("sudo heyu off " + self.code)
+    
+  def isSensor (self):
+    if mtype == "Motion" or mtype == "Unknown":
+      return True
+    else:
+      return False
