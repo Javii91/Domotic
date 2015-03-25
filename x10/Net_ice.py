@@ -41,7 +41,31 @@ if not _M_x10.__dict__.has_key('Net'):
             return '::x10::Net'
         ice_staticId = staticmethod(ice_staticId)
 
-        def printString(self, s, current=None):
+        def sendMsg(self, s, current=None):
+            pass
+
+        def showEnvironment(self, current=None):
+            pass
+
+        def setActive(self, name, current=None):
+            pass
+
+        def setInactive(self, name, current=None):
+            pass
+
+        def addModule(self, name, code, mtype, current=None):
+            pass
+
+        def changeNamebyCode(self, name, code, current=None):
+            pass
+
+        def changeName(self, newname, name, current=None):
+            pass
+
+        def isActivebyCode(self, code, current=None):
+            pass
+
+        def isAtive(self, name, current=None):
             pass
 
         def __str__(self):
@@ -52,14 +76,86 @@ if not _M_x10.__dict__.has_key('Net'):
     _M_x10.NetPrx = Ice.createTempClass()
     class NetPrx(Ice.ObjectPrx):
 
-        def printString(self, s, _ctx=None):
-            return _M_x10.Net._op_printString.invoke(self, ((s, ), _ctx))
+        def sendMsg(self, s, _ctx=None):
+            return _M_x10.Net._op_sendMsg.invoke(self, ((s, ), _ctx))
 
-        def begin_printString(self, s, _response=None, _ex=None, _sent=None, _ctx=None):
-            return _M_x10.Net._op_printString.begin(self, ((s, ), _response, _ex, _sent, _ctx))
+        def begin_sendMsg(self, s, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_sendMsg.begin(self, ((s, ), _response, _ex, _sent, _ctx))
 
-        def end_printString(self, _r):
-            return _M_x10.Net._op_printString.end(self, _r)
+        def end_sendMsg(self, _r):
+            return _M_x10.Net._op_sendMsg.end(self, _r)
+
+        def showEnvironment(self, _ctx=None):
+            return _M_x10.Net._op_showEnvironment.invoke(self, ((), _ctx))
+
+        def begin_showEnvironment(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_showEnvironment.begin(self, ((), _response, _ex, _sent, _ctx))
+
+        def end_showEnvironment(self, _r):
+            return _M_x10.Net._op_showEnvironment.end(self, _r)
+
+        def setActive(self, name, _ctx=None):
+            return _M_x10.Net._op_setActive.invoke(self, ((name, ), _ctx))
+
+        def begin_setActive(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_setActive.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+
+        def end_setActive(self, _r):
+            return _M_x10.Net._op_setActive.end(self, _r)
+
+        def setInactive(self, name, _ctx=None):
+            return _M_x10.Net._op_setInactive.invoke(self, ((name, ), _ctx))
+
+        def begin_setInactive(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_setInactive.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+
+        def end_setInactive(self, _r):
+            return _M_x10.Net._op_setInactive.end(self, _r)
+
+        def addModule(self, name, code, mtype, _ctx=None):
+            return _M_x10.Net._op_addModule.invoke(self, ((name, code, mtype), _ctx))
+
+        def begin_addModule(self, name, code, mtype, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_addModule.begin(self, ((name, code, mtype), _response, _ex, _sent, _ctx))
+
+        def end_addModule(self, _r):
+            return _M_x10.Net._op_addModule.end(self, _r)
+
+        def changeNamebyCode(self, name, code, _ctx=None):
+            return _M_x10.Net._op_changeNamebyCode.invoke(self, ((name, code), _ctx))
+
+        def begin_changeNamebyCode(self, name, code, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_changeNamebyCode.begin(self, ((name, code), _response, _ex, _sent, _ctx))
+
+        def end_changeNamebyCode(self, _r):
+            return _M_x10.Net._op_changeNamebyCode.end(self, _r)
+
+        def changeName(self, newname, name, _ctx=None):
+            return _M_x10.Net._op_changeName.invoke(self, ((newname, name), _ctx))
+
+        def begin_changeName(self, newname, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_changeName.begin(self, ((newname, name), _response, _ex, _sent, _ctx))
+
+        def end_changeName(self, _r):
+            return _M_x10.Net._op_changeName.end(self, _r)
+
+        def isActivebyCode(self, code, _ctx=None):
+            return _M_x10.Net._op_isActivebyCode.invoke(self, ((code, ), _ctx))
+
+        def begin_isActivebyCode(self, code, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_isActivebyCode.begin(self, ((code, ), _response, _ex, _sent, _ctx))
+
+        def end_isActivebyCode(self, _r):
+            return _M_x10.Net._op_isActivebyCode.end(self, _r)
+
+        def isAtive(self, name, _ctx=None):
+            return _M_x10.Net._op_isAtive.invoke(self, ((name, ), _ctx))
+
+        def begin_isAtive(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_isAtive.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+
+        def end_isAtive(self, _r):
+            return _M_x10.Net._op_isAtive.end(self, _r)
 
         def checkedCast(proxy, facetOrCtx=None, _ctx=None):
             return _M_x10.NetPrx.ice_checkedCast(proxy, '::x10::Net', facetOrCtx, _ctx)
@@ -74,7 +170,15 @@ if not _M_x10.__dict__.has_key('Net'):
     _M_x10._t_Net = IcePy.defineClass('::x10::Net', Net, (), True, None, (), ())
     Net._ice_type = _M_x10._t_Net
 
-    Net._op_printString = IcePy.Operation('printString', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
+    Net._op_sendMsg = IcePy.Operation('sendMsg', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
+    Net._op_showEnvironment = IcePy.Operation('showEnvironment', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_string, ())
+    Net._op_setActive = IcePy.Operation('setActive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
+    Net._op_setInactive = IcePy.Operation('setInactive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
+    Net._op_addModule = IcePy.Operation('addModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
+    Net._op_changeNamebyCode = IcePy.Operation('changeNamebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
+    Net._op_changeName = IcePy.Operation('changeName', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
+    Net._op_isActivebyCode = IcePy.Operation('isActivebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
+    Net._op_isAtive = IcePy.Operation('isAtive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
 
     _M_x10.Net = Net
     del Net

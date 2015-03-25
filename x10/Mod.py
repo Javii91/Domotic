@@ -10,6 +10,8 @@ class Mod:
     self.name = name
     self.code = code
     self.mtype = mtype
+    if self.isSensor():
+      self.active = False
   
   def __str__(self):
     return self.name + "\t\t" + self.code + "\t\t" + self.mtype + "\t\t" + str(self.active)
@@ -26,7 +28,7 @@ class Mod:
     os.system("sudo heyu off " + self.code)
     
   def isSensor (self):
-    if mtype == "Motion" or mtype == "Unknown":
+    if self.mtype == "Motion" or self.mtype == "Unknown":
       return True
     else:
       return False

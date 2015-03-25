@@ -14,35 +14,37 @@ class NetI(x10.Net):
     print s
     
   def showEnvironment(self, current=None):
-    print txt.underline(txt.bold("House " + props["x10server.HouseCode"] + " Environment"))
-    print "Name\t\tCode\t\tType\t\tActive"
+    response = ""
+    response += txt.underline(txt.bold("House " + props["x10server.HouseCode"] + " Environment\n"))
+    response += "Name\t\tCode\t\tType\t\tActive\n"
     for i in Modules:
       if i.active:
-        print txt.green(str(i))
+        response += txt.green(str(i)+"\n")
       else:
-        print txt.gray(str(i))
+        response += txt.gray(str(i)+"\n")
+    return response
   
   def setActive(self, name, current=None):
     found = False
     for i in Modules:
-      if (i.name == name) and not i.isSensor:
-        print txt.warning("Activating module " + i.name + "...")
+      if (i.name == name) and i.isSensor() != True:
+        print txt.warning("  Activating module " + i.name + "...")
         i.setActive()
         found = True
         break
     if found == False:
-      print txt.warning("Module " + name + " not found.")
+      print txt.warning("  Module " + name + " not found.")
    
   def setInactive(self, name, current=None):
     found = False
     for i in Modules:
-      if (i.name == name) and not i.isSensor:
-        print txt.warning("Desactivating module " + i.name + "...")
+      if (i.name == name) and i.isSensor() != True:
+        print txt.warning("  Desactivating module " + i.name + "...")
         i.setInactive()
         found = True
         break
     if found == False:
-      print txt.warning("Module " + name + " not found.")
+      print txt.warning("  Module " + name + " not found.")
    
   def addModule (self, name, code, mtype, current=None):
     Modules.append(Mod(name, code, mtype))
@@ -70,11 +72,13 @@ class NetI(x10.Net):
         return i.active
 
   def checkSensor (self, current=None):
-    sys.stdout.write(txt.warning("Monitoring sensor modules..."))
+    sys.stdout.write(txt.warning("Monitoring sensor modules...\t"))
     sys.stdout.flush()
     p = subprocess.Popen("heyu monitor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print txt.bold(txt.green("Running"))
     while True:
+      if status == 1:
+        break
       out = p.stdout.readline()
       if out.find("rcvi addr unit") != -1:
         mcode = out[44:46]
@@ -110,7 +114,7 @@ class NetI(x10.Net):
         
         
 def checkModules(props):
-  sys.stdout.write(txt.warning("Loading environment..."))
+  sys.stdout.write(txt.warning("Loading environment...\t\t"))
   sys.stdout.flush()
   for i in range(1,17):
     if "x10server.HouseModule." + str(i) + ".name" in props:
@@ -122,7 +126,7 @@ status = -1
 ic = None
 
 ## Initialize HEYU system
-sys.stdout.write(txt.warning("Initializing x10 system... "))
+sys.stdout.write(txt.warning("Initializing x10 system...\t"))
 sys.stdout.flush()
 proc = subprocess.Popen("sudo heyu start", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 (out, err) = proc.communicate()
@@ -143,17 +147,16 @@ try:
     checkModules(props)
     
     object = NetI()
-    #object.showEnvironment()
-    #object.setActive("lampara")
-    #object.showEnvironment()
-    #object.setInactive("lampara")
-    #object.showEnvironment()
-    thread = Thread(target = object.checkSensor())
-    thread.start()
-    
     adapter.add(object, ic.stringToIdentity("Net"))
     adapter.activate()
-    print txt.warning("Reading client request...")
+    
+    sys.stdout.write(txt.warning("Listening client request...\t"))
+    sys.stdout.flush()
+    print txt.bold(txt.green("Running"))
+    
+    thread = Thread(target = object.checkSensor)
+    thread.start()
+    
     ic.waitForShutdown()
 except:
     if status == -1:
