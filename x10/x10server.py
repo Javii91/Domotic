@@ -4,6 +4,7 @@ from Mod import Mod
 from Colors import Colors
 import subprocess
 from threading import Thread
+import time
 
 
 Modules = []
@@ -70,6 +71,7 @@ class NetI(x10.Net):
     for i in Modules:
       if i.name == name:
         return i.active
+          
 
   def checkSensor (self, current=None):
     sys.stdout.write(txt.warning("Monitoring sensor modules...\t"))
@@ -156,6 +158,8 @@ try:
     
     thread = Thread(target = object.checkSensor)
     thread.start()
+    thread2 = Thread(target = object.checkActuador)
+    thread2.start()
     
     ic.waitForShutdown()
 except:
