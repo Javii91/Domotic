@@ -47,6 +47,9 @@ if not _M_x10.__dict__.has_key('Net'):
         def showEnvironment(self, current=None):
             pass
 
+        def getEnvironment(self, current=None):
+            pass
+
         def setActive(self, name, current=None):
             pass
 
@@ -93,6 +96,15 @@ if not _M_x10.__dict__.has_key('Net'):
 
         def end_showEnvironment(self, _r):
             return _M_x10.Net._op_showEnvironment.end(self, _r)
+
+        def getEnvironment(self, _ctx=None):
+            return _M_x10.Net._op_getEnvironment.invoke(self, ((), _ctx))
+
+        def begin_getEnvironment(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_getEnvironment.begin(self, ((), _response, _ex, _sent, _ctx))
+
+        def end_getEnvironment(self, _r):
+            return _M_x10.Net._op_getEnvironment.end(self, _r)
 
         def setActive(self, name, _ctx=None):
             return _M_x10.Net._op_setActive.invoke(self, ((name, ), _ctx))
@@ -172,6 +184,7 @@ if not _M_x10.__dict__.has_key('Net'):
 
     Net._op_sendMsg = IcePy.Operation('sendMsg', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_showEnvironment = IcePy.Operation('showEnvironment', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_string, ())
+    Net._op_getEnvironment = IcePy.Operation('getEnvironment', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_string, ())
     Net._op_setActive = IcePy.Operation('setActive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_setInactive = IcePy.Operation('setInactive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_addModule = IcePy.Operation('addModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())

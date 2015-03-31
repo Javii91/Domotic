@@ -2,6 +2,7 @@ module x10 {
     interface Net {
         void sendMsg(string s);
         string showEnvironment();
+        string getEnvironment();
         void setActive(string name);
         void setInactive(string name);
         void addModule(string name, string code, string mtype);

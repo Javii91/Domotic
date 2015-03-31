@@ -6,12 +6,13 @@ class Mod:
   mtype = ""
   active = True
   
-  def __init__(self, name, code, mtype):
+  def __init__(self, name, code, mtype, active=True):
     self.name = name
     self.code = code
     self.mtype = mtype
-    if self.isSensor():
-      self.active = False
+    self.active = active
+    #if self.isSensor():
+    #  self.active = False
   
   def __str__(self):
     return self.name + "\t\t" + self.code + "\t\t" + self.mtype + "\t\t" + str(self.active)

@@ -23,6 +23,12 @@ class NetI(x10.Net):
         response += txt.green(str(i)+"\n")
       else:
         response += txt.gray(str(i)+"\n")
+    print response
+    
+  def getEnvironment(self, current=None):
+    response = ""
+    for i in Modules:
+      response += i.code + "|" + i.name + "|" + i.mtype + "|" + str(i.active) + "|"
     return response
   
   def setActive(self, name, current=None):
@@ -48,7 +54,11 @@ class NetI(x10.Net):
       print txt.warning("  Module " + name + " not found.")
    
   def addModule (self, name, code, mtype, current=None):
-    Modules.append(Mod(name, code, mtype))
+    if mtype == "Lamp":
+      Modules.append(Mod(name, code, mtype))
+    else:
+      Modules.append(Mod(name, code, mtype, False))
+    print txt.warning("  Module " + name + " (" + code + ") added.")
     
   def changeNamebyCode(self, name, code, current=None):
     for i in Modules:
@@ -99,7 +109,7 @@ class NetI(x10.Net):
               break
         if found == False:
           print txt.warning("  Recognised module not added before. Now added as noName.")
-          self.addModule("noName", mcode, "Unknown")  
+          self.addModule("noName", mcode, "Unknown", False)  
           for i in Modules:
             if i.code == mcode and i.isSensor:
               if out.find("rcvi func           On : hc") != -1:
@@ -120,7 +130,10 @@ def checkModules(props):
   sys.stdout.flush()
   for i in range(1,17):
     if "x10server.HouseModule." + str(i) + ".name" in props:
-      Modules.append(Mod(props["x10server.HouseModule." + str(i) + ".name"], props["x10server.HouseCode"] + str(i) , props["x10server.HouseModule." + str(i) + ".type"]))
+      if props["x10server.HouseModule." + str(i) + ".type"] == "Lamp":
+        Modules.append(Mod(props["x10server.HouseModule." + str(i) + ".name"], props["x10server.HouseCode"] + str(i) , props["x10server.HouseModule." + str(i) + ".type"]))
+      else:
+        Modules.append(Mod(props["x10server.HouseModule." + str(i) + ".name"], props["x10server.HouseCode"] + str(i) , props["x10server.HouseModule." + str(i) + ".type"], False))
   print txt.bold(txt.green("Done"))
 
 txt = Colors()
@@ -158,8 +171,6 @@ try:
     
     thread = Thread(target = object.checkSensor)
     thread.start()
-    thread2 = Thread(target = object.checkActuador)
-    thread2.start()
     
     ic.waitForShutdown()
 except:
