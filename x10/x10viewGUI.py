@@ -1,14 +1,14 @@
-from gi.repository import Gtk
+from gi.repository import Gtk,GObject
 from Mod import Mod
 import sys, traceback, Ice
 import x10
 from Colors import Colors
-from threading import Thread
+from threading import Thread, Timer
 import time
 
 
 
-
+#GObject.threads_init()
 class viewGUI:
 
   Modus = []
@@ -25,11 +25,39 @@ class viewGUI:
     self.window.add(self.notebook)
 
     self.environment()
+    #Timer(10,self.askdformods).start()
+
     self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
     
     self.window.show_all()
     
-
+  def askdformods (self):
+    if cmp(self.Modus, self.parseMod(net.getEnvironment())) == -1:
+      self.table.destroy()
+      self.modtable()
+    Timer(10,self.askdformods).start()
+    
+  def changename (self, button, mod):
+    self.window3 = self.builder.get_object("dialog1")
+    self.builder.get_object("entry1").set_text(mod.name)
+    self.window3.connect("delete_event", self.on_button4_clicked)
+    self.window3.show_all()
+    self.change = self.builder.get_object("button5")
+    self.lastsignal = self.change.connect("clicked", self.on_button5_clicked, mod)
+    
+  def on_button4_clicked(self, button):
+    self.builder.get_object("entry1").set_text("")
+    self.window3.hide()
+    self.change.disconnect(self.lastsignal)
+    
+  def on_button5_clicked(self, button, mod):
+    name = self.builder.get_object("entry1").get_text()
+    net.changeNamebyCode(name, mod.code)
+    self.table.destroy()
+    self.modtable()
+    self.builder.get_object("entry1").set_text("")
+    self.window3.hide()
+    self.change.disconnect(self.lastsignal)
     
   def environment(self):
     self.maingrid = Gtk.Table(2, 1, False)  
@@ -44,8 +72,11 @@ class viewGUI:
     
     
   def modtable (self):
-    self.parseMod(net.getEnvironment())
-    self.table = Gtk.Table(len(self.Modus), 5, True)
+    self.Modus = self.parseMod(net.getEnvironment())
+    if len(self.Modus) == 0:
+      self.table = Gtk.Table(1, 5, True)
+    else:
+      self.table = Gtk.Table(len(self.Modus), 5, True)
     self.maingrid.attach(self.table, 0, 1, 1, 2)
     
     houseLabel = Gtk.Label()
@@ -72,6 +103,10 @@ class viewGUI:
     activeLabel.set_markup("<b>Active</b>")
     self.table.attach(activeLabel, 4, 5, 1, 2)
     
+    if len(self.Modus) == 0:
+      self.window.show_all()
+      return
+    
     for i in self.Modus:
       optionsbuttons = Gtk.Table(1, 2, True)
       self.table.attach(optionsbuttons, 0, 1, self.Modus.index(i)+2, self.Modus.index(i)+3)
@@ -80,6 +115,7 @@ class viewGUI:
       deletebutton.connect("clicked", self.on_delModule, i)
       changebuttonimage = Gtk.Image(stock=Gtk.STOCK_EXECUTE)
       changebutton = Gtk.Button(image=changebuttonimage)
+      changebutton.connect("clicked", self.changename, i)
       optionsbuttons.attach(deletebutton, 0, 1, 0, 1)
       optionsbuttons.attach(changebutton, 1, 2, 0, 1)
 
@@ -118,6 +154,7 @@ class viewGUI:
   def on_delModule(self, button, mod):
     #Eliminar modulo
     #Modus.remove(mod)
+    net.delModulebyCode(mod.code)
     self.table.destroy()
     self.modtable()
   
@@ -133,6 +170,16 @@ class viewGUI:
     self.window2 = self.builder.get_object("dialog2")
     self.window2.connect("delete_event", self.on_del)
     self.window2.show_all()
+    self.codex = self.builder.get_object("comboboxtext1")
+    self.typex = self.builder.get_object("comboboxtext2")
+    self.codex.remove_all()
+    wombocode = ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","A13","A14","A15","A16"]  
+    for i in self.Modus:
+      wombocode.remove(i.code)
+    for n in wombocode:
+      self.codex.append_text(n)
+    self.codex.set_active(0)
+    self.typex.set_active(0)
     
   def on_button7_clicked(self, button):
     code = self.builder.get_object("comboboxtext1").get_active_text()
@@ -148,6 +195,7 @@ class viewGUI:
     self.window2.hide()
     
   def on_button6_clicked(self, button):
+    self.builder.get_object("entry2").set_text("")
     self.window2.hide()
     
   def on_del(self, button, other):
@@ -155,19 +203,18 @@ class viewGUI:
     return True
     
   def parseMod (self,s):
-  
     def str_to_bool(s):
       if s == 'True':
          return True
       else:
          return False
-         
-    self.Modus = []
+             
+    mo = []
     pieces = s.split("|")
     for i in range(0,len(pieces)/4):
       newmod = Mod(pieces[i*4+1], pieces[i*4], pieces[i*4+2], str_to_bool(pieces[i*4+3]))
-      self.Modus.append(newmod)
-    #self.table.destroy()
+      mo.append(newmod)
+    return mo
     #self.modtable()
     
 

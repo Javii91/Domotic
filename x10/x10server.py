@@ -60,9 +60,24 @@ class NetI(x10.Net):
       Modules.append(Mod(name, code, mtype, False))
     print txt.warning("  Module " + name + " (" + code + ") added.")
     
+  def delModule (self, name, current=None):
+    for i in Modules:
+      if i.name == name:
+        print txt.warning("  Deleting " + i.code + " with name " + i.name)
+        Modules.remove(i)
+        break
+        
+  def delModulebyCode (self, code, current=None):
+    for i in Modules:
+      if i.code == code:
+        print txt.warning("  Deleting " + i.code + " with name " + i.name)
+        Modules.remove(i)
+        break
+    
   def changeNamebyCode(self, name, code, current=None):
     for i in Modules:
       if i.code == code:
+        print txt.warning("  Changing " + i.code + " name to " + name)
         i.setName(name)
         break
   

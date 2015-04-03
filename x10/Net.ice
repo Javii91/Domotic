@@ -6,6 +6,8 @@ module x10 {
         void setActive(string name);
         void setInactive(string name);
         void addModule(string name, string code, string mtype);
+        void delModule(string name);
+        void delModulebyCode(string code);
         void changeNamebyCode(string name, string code);
         void changeName(string newname, string name);
         bool isActivebyCode(string code);
