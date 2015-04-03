@@ -39,6 +39,11 @@ class NetI(x10.Net):
         i.setActive()
         found = True
         break
+      if (i.name == name) and i.isSensor() == True:
+        print txt.warning("  Impossible to activate " + i.name + "...")
+        found = True
+        self.showEnvironment()
+        break
     if found == False:
       print txt.warning("  Module " + name + " not found.")
    
@@ -50,8 +55,24 @@ class NetI(x10.Net):
         i.setInactive()
         found = True
         break
+      if (i.name == name) and i.isSensor() == True:
+        print txt.warning("  Impossible to desactivate " + i.name + "...")
+        found = True
+        self.showEnvironment()
+        break
     if found == False:
       print txt.warning("  Module " + name + " not found.")
+      
+      
+  def isSensor(self, name, current=None):
+    for i in Modules:
+      if (i.name == name) and i.isSensor() != True:
+        return False
+      if (i.name == name) and i.isSensor() == True:
+        return True
+
+      
+      
    
   def addModule (self, name, code, mtype, current=None):
     if mtype == "Lamp":

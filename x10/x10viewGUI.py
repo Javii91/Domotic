@@ -1,4 +1,4 @@
-from gi.repository import Gtk,GObject
+from gi.repository import Gtk,GObject,Gdk
 from Mod import Mod
 import sys, traceback, Ice
 import x10
@@ -19,6 +19,17 @@ class viewGUI:
     self.builder.connect_signals(self)
     self.window = self.builder.get_object("window1")
     self.window.connect("delete-event", Gtk.main_quit)
+    style_provider = Gtk.CssProvider()
+
+    css = """#Active {background: #04B404;}#NoActive {background: #B40404;}"""
+
+    style_provider.load_from_data(css)
+
+    Gtk.StyleContext.add_provider_for_screen(
+      Gdk.Screen.get_default(), 
+      style_provider,     
+      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
     
     
     self.notebook = Gtk.Notebook()
@@ -124,9 +135,13 @@ class viewGUI:
         self.table.attach(Gtk.Label(i.code), 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3)
         self.table.attach(Gtk.Label(i.name), 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3)
         self.table.attach(Gtk.Label(i.mtype), 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3)
-        l4 = Gtk.Switch()
-        l4.set_active(False)
-        l4.connect("button-press-event", self.on_actModule, i)
+        if net.isSensor(i.name):
+          l4 = Gtk.Button()
+          l4.set_name('NoActive')
+        else:
+          l4 = Gtk.Switch()
+          l4.set_active(False)
+          l4.connect("button-press-event", self.on_actModule, i)
         self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3)
 
       else:
@@ -142,15 +157,19 @@ class viewGUI:
         l3.set_markup('<span color="#347C2C">' + i.mtype + '</span>')
         self.table.attach(l3, 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3)
         
-        l4 = Gtk.Switch()
-        l4.set_active(True)
-        l4.connect("button-press-event", self.on_actModule, i)
-        #l4.set_markup('<span color="#347C2C">' + str(i.active) + '</span>')
+       
+        if net.isSensor(i.name):
+          l4 = Gtk.Button()
+          l4.set_name('Active')
+        else:
+          l4 = Gtk.Switch()
+          l4.set_active(True)
+          l4.connect("button-press-event", self.on_actModule, i)
         self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3)
 
     self.window.show_all()
         
-        
+
   def on_delModule(self, button, mod):
     #Eliminar modulo
     #Modus.remove(mod)
@@ -159,12 +178,17 @@ class viewGUI:
     self.modtable()
   
   def on_actModule(self, button, event, mod):
+    
     if mod.active:
       net.setInactive(mod.name)
-      mod.active = False
     else:
       net.setActive(mod.name)
-      mod.active = True
+    self.table.destroy()
+    self.modtable()
+
+    
+
+
         
   def on_addModule(self, button):
     self.window2 = self.builder.get_object("dialog2")

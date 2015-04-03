@@ -7,6 +7,7 @@ module x10 {
         void setInactive(string name);
         void addModule(string name, string code, string mtype);
         void delModule(string name);
+        bool isSensor(string name);
         void delModulebyCode(string code);
         void changeNamebyCode(string name, string code);
         void changeName(string newname, string name);
