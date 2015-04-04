@@ -4,7 +4,7 @@ from Mod import Mod
 from Colors import Colors
 import subprocess
 from threading import Thread
-import time
+import time, datetime
 
 
 Modules = []
@@ -42,7 +42,6 @@ class NetI(x10.Net):
       if (i.name == name) and i.isSensor() == True:
         print txt.warning("  Impossible to activate " + i.name + "...")
         found = True
-        self.showEnvironment()
         break
     if found == False:
       print txt.warning("  Module " + name + " not found.")
@@ -58,7 +57,6 @@ class NetI(x10.Net):
       if (i.name == name) and i.isSensor() == True:
         print txt.warning("  Impossible to desactivate " + i.name + "...")
         found = True
-        self.showEnvironment()
         break
     if found == False:
       print txt.warning("  Module " + name + " not found.")
@@ -71,6 +69,22 @@ class NetI(x10.Net):
       if (i.name == name) and i.isSensor() == True:
         return True
 
+  def setAlarm(self, name, sh, sm, eh, em, act, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.setcfgAlarm(sh,sm,eh,em,act)
+        if act == True:
+          print txt.warning("  Timer set to " + i.name + " (" + i.code + ") -> ["+sh+":"+sm+"]-["+eh+":"+em+"].")
+          #Programo encendido
+          pass
+        break
+  
+  
+  def getAlarm(self, name, current=None):
+    for i in Modules:
+      if i.name == name:
+        alarm = i.getcfgAlarm()
+        return str(alarm[0]) + "|" + alarm[1] + "|" + alarm[2] + "|" + alarm[3] + "|" + alarm[4]
       
       
    
@@ -117,7 +131,20 @@ class NetI(x10.Net):
     for i in Modules:
       if i.name == name:
         return i.active
-          
+  
+  def checkAlarm (self, current=None):
+    while True:
+      if status == 1:
+        break
+      now = datetime.datetime.now()
+      t = str(now.hour).zfill(2)  + ":" + str(now.minute)
+      for i in Modules:
+        if i.alarm_act:
+          if t == i.alarm_start:
+            i.setActive()
+          if t == i.alarm_end:
+            i.setInactive()
+      time.sleep(1)    
 
   def checkSensor (self, current=None):
     sys.stdout.write(txt.warning("Monitoring sensor modules...\t"))
@@ -207,6 +234,9 @@ try:
     
     thread = Thread(target = object.checkSensor)
     thread.start()
+    
+    threadalarm = Thread(target = object.checkAlarm)
+    threadalarm.start()
     
     ic.waitForShutdown()
 except:

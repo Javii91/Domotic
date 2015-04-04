@@ -5,6 +5,9 @@ class Mod:
   code = ""
   mtype = ""
   active = True
+  alarm_act = False
+  alarm_start = "00:00"
+  alarm_end = "23:55"
   
   def __init__(self, name, code, mtype, active=True):
     self.name = name
@@ -33,3 +36,12 @@ class Mod:
       return True
     else:
       return False
+      
+  def setcfgAlarm(self, sh,sm,eh,em, act):
+    self.alarm_act = act
+    self.alarm_start = str(sh) + ":" + str(sm)
+    self.alarm_end = str(eh) + ":" + str(em)
+    
+  def getcfgAlarm(self):
+    return [self.alarm_act, self.alarm_start[0:2], self.alarm_start[3:5], self.alarm_end[0:2], self.alarm_end[3:5]]
+    

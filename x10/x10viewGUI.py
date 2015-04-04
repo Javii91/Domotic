@@ -47,6 +47,8 @@ class viewGUI:
       self.table.destroy()
       self.modtable()
     Timer(10,self.askdformods).start()
+  
+
     
   def changename (self, button, mod):
     self.window3 = self.builder.get_object("dialog1")
@@ -56,14 +58,59 @@ class viewGUI:
     self.change = self.builder.get_object("button5")
     self.lastsignal = self.change.connect("clicked", self.on_button5_clicked, mod)
     
-  def on_button4_clicked(self, button):
+  def changenamepro (self, button, mod):
+    self.window4 = self.builder.get_object("dialog3")
+    self.window4.show_all()
+    self.builder.get_object("entry3").set_text(mod.name)
+    self.window4.connect("delete_event", self.on_button1_clicked)
+    self.change2 = self.builder.get_object("button2")
+    self.lastsignal2 = self.change2.connect("clicked", self.on_button2_clicked, mod)
+    self.toff = self.builder.get_object("radiobutton1")
+    self.ton = self.builder.get_object("radiobutton2")
+    self.starth = self.builder.get_object("comboboxtext3")
+    self.startm = self.builder.get_object("comboboxtext4")
+    self.endh = self.builder.get_object("comboboxtext5")
+    self.endm = self.builder.get_object("comboboxtext6")
+    # if no estaba programado antes
+    alarm = self.parseAlarm(net.getAlarm(mod.name))
+    self.starth.set_active(alarm[1])
+    self.startm.set_active(alarm[2])
+    self.endh.set_active(alarm[3])
+    self.endm.set_active(alarm[4])
+    if alarm[0]:
+      self.ton.set_active(True)
+    else:
+      self.toff.set_active(True)
+    # else si lo estaba, valor dado
+    
+    
+  def on_button1_clicked(self, button, event=None):
+    self.builder.get_object("entry3").set_text("")
+    self.window4.hide()
+    self.change2.disconnect(self.lastsignal2)
+    return True
+    
+  def on_button2_clicked(self, button, mod):
+    name = self.builder.get_object("entry3").get_text()
+    if mod.name != name:
+      net.changeNamebyCode(name, mod.code)
+    net.setAlarm(mod.name, self.starth.get_active_text(), self.startm.get_active_text(),self.endh.get_active_text(),self.endm.get_active_text(),self.ton.get_active())
+    self.table.destroy()
+    self.modtable()
+    self.builder.get_object("entry3").set_text("")
+    self.window4.hide()
+    self.change2.disconnect(self.lastsignal2)
+    
+  def on_button4_clicked(self, button, event=None):
     self.builder.get_object("entry1").set_text("")
     self.window3.hide()
     self.change.disconnect(self.lastsignal)
+    return True
     
   def on_button5_clicked(self, button, mod):
     name = self.builder.get_object("entry1").get_text()
-    net.changeNamebyCode(name, mod.code)
+    if mod.name != name:
+      net.changeNamebyCode(name, mod.code)
     self.table.destroy()
     self.modtable()
     self.builder.get_object("entry1").set_text("")
@@ -126,7 +173,10 @@ class viewGUI:
       deletebutton.connect("clicked", self.on_delModule, i)
       changebuttonimage = Gtk.Image(stock=Gtk.STOCK_EXECUTE)
       changebutton = Gtk.Button(image=changebuttonimage)
-      changebutton.connect("clicked", self.changename, i)
+      if (net.isSensor(i.name)):
+        changebutton.connect("clicked", self.changename, i)
+      else:
+        changebutton.connect("clicked", self.changenamepro, i)
       optionsbuttons.attach(deletebutton, 0, 1, 0, 1)
       optionsbuttons.attach(changebutton, 1, 2, 0, 1)
 
@@ -240,6 +290,22 @@ class viewGUI:
       mo.append(newmod)
     return mo
     #self.modtable()
+    
+  def parseAlarm (self,s):
+    def str_to_bool(s):
+      if s == 'True':
+         return True
+      else:
+         return False
+             
+    mo = []
+    pieces = s.split("|")
+    pieces[0] = str_to_bool(pieces[0])
+    pieces[1] = int(pieces[1])
+    pieces[2] = int(pieces[2])/5
+    pieces[3] = int(pieces[3])
+    pieces[4] = int(pieces[4])/5
+    return pieces
     
 
         

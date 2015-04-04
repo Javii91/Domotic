@@ -62,6 +62,12 @@ if not _M_x10.__dict__.has_key('Net'):
         def delModule(self, name, current=None):
             pass
 
+        def getAlarm(self, name, current=None):
+            pass
+
+        def setAlarm(self, name, sh, sm, eh, em, act, current=None):
+            pass
+
         def isSensor(self, name, current=None):
             pass
 
@@ -151,6 +157,24 @@ if not _M_x10.__dict__.has_key('Net'):
         def end_delModule(self, _r):
             return _M_x10.Net._op_delModule.end(self, _r)
 
+        def getAlarm(self, name, _ctx=None):
+            return _M_x10.Net._op_getAlarm.invoke(self, ((name, ), _ctx))
+
+        def begin_getAlarm(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_getAlarm.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+
+        def end_getAlarm(self, _r):
+            return _M_x10.Net._op_getAlarm.end(self, _r)
+
+        def setAlarm(self, name, sh, sm, eh, em, act, _ctx=None):
+            return _M_x10.Net._op_setAlarm.invoke(self, ((name, sh, sm, eh, em, act), _ctx))
+
+        def begin_setAlarm(self, name, sh, sm, eh, em, act, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_setAlarm.begin(self, ((name, sh, sm, eh, em, act), _response, _ex, _sent, _ctx))
+
+        def end_setAlarm(self, _r):
+            return _M_x10.Net._op_setAlarm.end(self, _r)
+
         def isSensor(self, name, _ctx=None):
             return _M_x10.Net._op_isSensor.invoke(self, ((name, ), _ctx))
 
@@ -225,6 +249,8 @@ if not _M_x10.__dict__.has_key('Net'):
     Net._op_setInactive = IcePy.Operation('setInactive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_addModule = IcePy.Operation('addModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
     Net._op_delModule = IcePy.Operation('delModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
+    Net._op_getAlarm = IcePy.Operation('getAlarm', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_string, ())
+    Net._op_setAlarm = IcePy.Operation('setAlarm', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_bool)), (), None, ())
     Net._op_isSensor = IcePy.Operation('isSensor', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
     Net._op_delModulebyCode = IcePy.Operation('delModulebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_changeNamebyCode = IcePy.Operation('changeNamebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
