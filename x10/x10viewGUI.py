@@ -1,16 +1,18 @@
-from gi.repository import Gtk,GObject,Gdk
+from gi.repository import Gtk,GObject,Gdk,GLib
 from Mod import Mod
 import sys, traceback, Ice
 import x10
 from Colors import Colors
 from threading import Thread, Timer
+import threading
 import time
 
 
 
-#GObject.threads_init()
+
 class viewGUI:
 
+  asktime = 5
   Modus = []
 
   def __init__(self):
@@ -36,17 +38,34 @@ class viewGUI:
     self.window.add(self.notebook)
 
     self.environment()
-    #Timer(10,self.askdformods).start()
 
     self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
+    threading.Thread(target=self.askdformods).start()
     
     self.window.show_all()
     
   def askdformods (self):
-    if cmp(self.Modus, self.parseMod(net.getEnvironment())) == -1:
-      self.table.destroy()
-      self.modtable()
-    Timer(10,self.askdformods).start()
+    while True:
+      newmod = self.parseMod(net.getEnvironment())
+      if len(self.Modus) != len(newmod):
+        Gdk.threads_enter()
+        self.table.destroy()
+        self.modtable()
+        Gdk.threads_leave()
+      else:
+        for i in self.Modus:
+          for n in newmod:
+            found = False
+            if i.compare(n):
+              found = True
+              break
+          if found == False:
+            Gdk.threads_enter()
+            self.table.destroy()
+            self.modtable()
+            Gdk.threads_leave()
+            break
+
   
 
     
@@ -221,8 +240,6 @@ class viewGUI:
         
 
   def on_delModule(self, button, mod):
-    #Eliminar modulo
-    #Modus.remove(mod)
     net.delModulebyCode(mod.code)
     self.table.destroy()
     self.modtable()
@@ -313,6 +330,7 @@ class viewGUI:
 if __name__ == "__main__":
   settings = Gtk.Settings.get_default()
   settings.props.gtk_button_images = True
+  #GObject.threads_init()
 
   status = 0
   ic = None
@@ -325,7 +343,15 @@ if __name__ == "__main__":
     
 
     GUI = viewGUI()
+
+    GLib.threads_init()
+    Gdk.threads_init()
+    Gdk.threads_enter()
     Gtk.main()
+    Gdk.threads_leave()
+    
+    #Gtk.main()
+
       
     
   except:

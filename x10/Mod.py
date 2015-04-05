@@ -37,6 +37,12 @@ class Mod:
     else:
       return False
       
+  def compare (self, mod):
+    if mod.name == self.name and mod.code == self.code and mod.mtype == self.mtype and mod.active == self.active and mod.alarm_act == self.alarm_act and mod.alarm_start == self.alarm_start and mod.alarm_end == self.alarm_end:
+      return True
+    else:
+      return False
+      
   def setcfgAlarm(self, sh,sm,eh,em, act):
     self.alarm_act = act
     self.alarm_start = str(sh) + ":" + str(sm)
