@@ -14,6 +14,8 @@ class viewGUI:
 
   asktime = 5
   Modus = []
+  Alarms = []
+  Rules = []
 
   def __init__(self):
     self.builder = Gtk.Builder()
@@ -66,7 +68,95 @@ class viewGUI:
             Gdk.threads_leave()
             break
 
-  
+
+  def parsemymods (self):
+    rdymods = []
+    for i in self.Modus:
+      if i.isSensor() == False:
+        rdymods.append("("+i.code+") "+i.name)
+
+    return rdymods
+
+  def parseRules (self, s): 
+    pieces = []
+    if s != "":
+      pieces = s.split("|")
+    return pieces
+        
+
+
+  def on_button9_clicked (self, button, mod):
+    net.setRule(mod.name,self.builder.get_object("comboboxtext7").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext9").get_active_text())
+    self.builder.get_object("label13").set_label("")
+    self.window5.hide()
+    self.change3.disconnect(self.lastsignal3)
+    self.table2.destroy()
+    self.rultable(mod)
+    return True
+
+  def on_delrul (self, button, mod, rule):
+    net.delRule(mod.name, rule)
+    self.table2.destroy()
+    self.rultable(mod)
+		
+
+  def changerule (self, button, mod):
+    self.window5 = self.builder.get_object("dialog4")
+    self.builder.get_object("label13").set_label(mod.name)
+    self.window5.connect("delete_event", self.on_button8_clicked)
+    self.window5.show_all()
+    self.change3 = self.builder.get_object("button9")
+    self.lastsignal3 = self.change3.connect("clicked", self.on_button9_clicked, mod)
+    self.combotextmodus = self.builder.get_object("comboboxtext8")
+    self.builder.get_object("comboboxtext7").set_active(0)
+    self.builder.get_object("comboboxtext9").set_active(0)
+    rdymods = self.parsemymods()
+    self.combotextmodus.remove_all()
+    for i in rdymods:
+      self.combotextmodus.append_text(i)
+    self.combotextmodus.set_active(0)
+
+
+  def rultable (self, mod):
+    rules = self.parseRules(net.getRule(mod.name))
+
+    if len(rules) == 0:
+      self.table2 = Gtk.Table(1, 4, False)
+    else:
+      self.table2 = Gtk.Table(len(rules)/3, 4, False)
+    self.box5.pack_start(self.table2, True, True, 0)
+    
+    optionsLabel = Gtk.Label()
+    optionsLabel.set_markup("<b>Del</b>")
+    self.table2.attach(optionsLabel, 0, 1, 0, 1)
+    
+    codeLabel = Gtk.Label()
+    codeLabel.set_markup("<b>State</b>")
+    self.table2.attach(codeLabel, 1, 2, 0, 1)
+    
+    nameLabel = Gtk.Label()
+    nameLabel.set_markup("<b>Module</b>")
+    self.table2.attach(nameLabel, 2, 3, 0, 1)
+    
+    typeLabel = Gtk.Label()
+    typeLabel.set_markup("<b>Action</b>")
+    self.table2.attach(typeLabel, 3, 4, 0, 1)
+    
+    
+    if len(rules) == 0:
+      self.window3.show_all()
+      return
+    
+    for i in range(len(rules)/3):
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_delrul, mod, i) 
+      self.table2.attach(deletebutton, 0, 1, 3*i+1, 3*i+2)
+      self.table2.attach(Gtk.Label(rules[3*i]), 1, 2, 3*i+1, 3*i+2)
+      self.table2.attach(Gtk.Label(rules[3*i+1]), 2, 3, 3*i+1, 3*i+2)
+      self.table2.attach(Gtk.Label(rules[3*i+2]), 3, 4, 3*i+1, 3*i+2)
+
+    self.window3.show_all()
 
     
   def changename (self, button, mod):
@@ -75,8 +165,18 @@ class viewGUI:
     self.window3.connect("delete_event", self.on_button4_clicked)
     self.window3.show_all()
     self.change = self.builder.get_object("button5")
+    self.box5 = self.builder.get_object("box5")
     self.lastsignal = self.change.connect("clicked", self.on_button5_clicked, mod)
+    self.senalarm = self.builder.get_object("switch1")
+    self.addrule = self.builder.get_object("button3")
+    self.lastsignal4 = self.addrule.connect("clicked", self.changerule, mod)
+    self.rultable(mod)
     
+    
+
+
+
+
   def changenamepro (self, button, mod):
     self.window4 = self.builder.get_object("dialog3")
     self.window4.show_all()
@@ -124,6 +224,14 @@ class viewGUI:
     self.builder.get_object("entry1").set_text("")
     self.window3.hide()
     self.change.disconnect(self.lastsignal)
+    self.addrule.disconnect(self.lastsignal4)
+    self.table2.destroy()
+    return True
+
+  def on_button8_clicked(self, button, event=None):
+    self.builder.get_object("label13").set_label("")
+    self.window5.hide()
+    self.change3.disconnect(self.lastsignal3)
     return True
     
   def on_button5_clicked(self, button, mod):
@@ -135,6 +243,8 @@ class viewGUI:
     self.builder.get_object("entry1").set_text("")
     self.window3.hide()
     self.change.disconnect(self.lastsignal)
+    self.addrule.disconnect(self.lastsignal4)
+    self.table2.destroy()
     
   def environment(self):
     self.maingrid = Gtk.Table(2, 1, False)  
@@ -300,12 +410,15 @@ class viewGUI:
       else:
          return False
              
-    mo = []
-    pieces = s.split("|")
-    for i in range(0,len(pieces)/4):
-      newmod = Mod(pieces[i*4+1], pieces[i*4], pieces[i*4+2], str_to_bool(pieces[i*4+3]))
-      mo.append(newmod)
-    return mo
+    pieces = []
+    if s != "":
+      mo = []
+      pieces = s.split("|")
+      for i in range(0,len(pieces)/4):
+        newmod = Mod(pieces[i*4+1], pieces[i*4], pieces[i*4+2], str_to_bool(pieces[i*4+3]))
+        mo.append(newmod)
+      return mo
+    return pieces
     #self.modtable()
     
   def parseAlarm (self,s):
@@ -315,7 +428,6 @@ class viewGUI:
       else:
          return False
              
-    mo = []
     pieces = s.split("|")
     pieces[0] = str_to_bool(pieces[0])
     pieces[1] = int(pieces[1])

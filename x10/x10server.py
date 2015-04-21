@@ -85,7 +85,54 @@ class NetI(x10.Net):
       if i.name == name:
         alarm = i.getcfgAlarm()
         return str(alarm[0]) + "|" + alarm[1] + "|" + alarm[2] + "|" + alarm[3] + "|" + alarm[4]
-      
+
+
+  def getRule(self, name, current=None):
+    for i in Modules:
+      if i.name == name:
+        alarm = i.getRules()
+        return "|".join(alarm)
+
+  def setRule(self, name, SenState, selectMod, Action, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.setRules(SenState,selectMod,Action)
+        print txt.warning("  Rule set to " + i.name + " (" + i.code + ") -> when " +SenState+ " then " + Action + " " + selectMod + ".")
+        break
+
+  def delRule(self, name, rule, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.delRules(rule)
+        break
+
+  def doRules(self,name, state, current=None):
+    for i in Modules:
+      if i.name == name:
+        rules = i.getRules()
+        for r in rules:
+          pieces = r.split("|")
+          if pieces[0] == "On" and state == True:
+            if pieces[2] == "Activate":
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setActive()
+            else:
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setInactive()
+          elif pieces[0] == "Off" and state == False:
+            if pieces[2] == "Activate":
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setActive()
+            else:
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setInactive()
+
+
+
       
    
   def addModule (self, name, code, mtype, current=None):
@@ -149,7 +196,7 @@ class NetI(x10.Net):
   def checkSensor (self, current=None):
     sys.stdout.write(txt.warning("Monitoring sensor modules...\t"))
     sys.stdout.flush()
-    p = subprocess.Popen("heyu monitor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    p = subprocess.Popen("sudo heyu monitor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     print txt.bold(txt.green("Running"))
     while True:
       if status == 1:
@@ -165,10 +212,12 @@ class NetI(x10.Net):
             if out.find("rcvi func           On : hc") != -1:
               print txt.warning("  Module '" + txt.bold(i.name)) + txt.warning("' has been activated.")
               i.setActive()
+              self.doRules(i.name, True)
               break
             if out.find("rcvi func          Off : hc") != -1:
               print txt.warning("  Module '" + txt.bold(i.name)) + txt.warning("' has been deactivated.")
               i.setInactive()
+              self.doRules(i.name, False)
               break
         if found == False:
           print txt.warning("  Recognised module not added before. Now added as noName.")

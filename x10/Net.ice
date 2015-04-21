@@ -9,6 +9,9 @@ module x10 {
         void delModule(string name);
         string getAlarm(string name);
         void setAlarm(string name, string sh, string sm, string eh, string em, bool act);
+        string getRule(string name);
+        void setRule(string name, string SenState, string selectMod, string Action);
+        void delRule(string name, int rule);
         bool isSensor(string name);
         void delModulebyCode(string code);
         void changeNamebyCode(string name, string code);

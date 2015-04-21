@@ -68,6 +68,15 @@ if not _M_x10.__dict__.has_key('Net'):
         def setAlarm(self, name, sh, sm, eh, em, act, current=None):
             pass
 
+        def getRule(self, name, current=None):
+            pass
+
+        def setRule(self, name, SenState, selectMod, Action, current=None):
+            pass
+
+        def delRule(self, name, rule, current=None):
+            pass
+
         def isSensor(self, name, current=None):
             pass
 
@@ -175,6 +184,33 @@ if not _M_x10.__dict__.has_key('Net'):
         def end_setAlarm(self, _r):
             return _M_x10.Net._op_setAlarm.end(self, _r)
 
+        def getRule(self, name, _ctx=None):
+            return _M_x10.Net._op_getRule.invoke(self, ((name, ), _ctx))
+
+        def begin_getRule(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_getRule.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+
+        def end_getRule(self, _r):
+            return _M_x10.Net._op_getRule.end(self, _r)
+
+        def setRule(self, name, SenState, selectMod, Action, _ctx=None):
+            return _M_x10.Net._op_setRule.invoke(self, ((name, SenState, selectMod, Action), _ctx))
+
+        def begin_setRule(self, name, SenState, selectMod, Action, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_setRule.begin(self, ((name, SenState, selectMod, Action), _response, _ex, _sent, _ctx))
+
+        def end_setRule(self, _r):
+            return _M_x10.Net._op_setRule.end(self, _r)
+
+        def delRule(self, name, rule, _ctx=None):
+            return _M_x10.Net._op_delRule.invoke(self, ((name, rule), _ctx))
+
+        def begin_delRule(self, name, rule, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_delRule.begin(self, ((name, rule), _response, _ex, _sent, _ctx))
+
+        def end_delRule(self, _r):
+            return _M_x10.Net._op_delRule.end(self, _r)
+
         def isSensor(self, name, _ctx=None):
             return _M_x10.Net._op_isSensor.invoke(self, ((name, ), _ctx))
 
@@ -251,6 +287,9 @@ if not _M_x10.__dict__.has_key('Net'):
     Net._op_delModule = IcePy.Operation('delModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_getAlarm = IcePy.Operation('getAlarm', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_string, ())
     Net._op_setAlarm = IcePy.Operation('setAlarm', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_bool)), (), None, ())
+    Net._op_getRule = IcePy.Operation('getRule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_string, ())
+    Net._op_setRule = IcePy.Operation('setRule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
+    Net._op_delRule = IcePy.Operation('delRule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_int)), (), None, ())
     Net._op_isSensor = IcePy.Operation('isSensor', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
     Net._op_delModulebyCode = IcePy.Operation('delModulebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_changeNamebyCode = IcePy.Operation('changeNamebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())

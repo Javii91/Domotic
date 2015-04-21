@@ -8,6 +8,7 @@ class Mod:
   alarm_act = False
   alarm_start = "00:00"
   alarm_end = "23:55"
+  rules = []
   
   def __init__(self, name, code, mtype, active=True):
     self.name = name
@@ -51,3 +52,12 @@ class Mod:
   def getcfgAlarm(self):
     return [self.alarm_act, self.alarm_start[0:2], self.alarm_start[3:5], self.alarm_end[0:2], self.alarm_end[3:5]]
     
+
+  def setRules(self,mystate,yourstate,action): 
+    self.rules.append(mystate +"|"+yourstate+"|"+action)
+
+  def getRules(self):
+    return self.rules
+
+  def delRules(self, i):
+    del self.rules[i]
