@@ -1,10 +1,16 @@
-from gi.repository import Gtk,GObject,Gdk,GLib
+from gi.repository import Gtk,GObject,Gdk,GLib,GdkPixbuf
 from Mod import Mod
 import sys, traceback, Ice
 import x10
 from Colors import Colors
 from threading import Thread, Timer
 import threading
+import cv2
+import sys
+import cairo
+import jderobot
+import numpy
+import Image
 import time, datetime
 
 
@@ -13,6 +19,8 @@ import time, datetime
 class viewGUI:
 
   Modus = []
+  Camera = ["localhost","9999"]
+  CameraRun = False
 
   def __init__(self):
     self.builder = Gtk.Builder()
@@ -37,14 +45,64 @@ class viewGUI:
     self.window.add(self.notebook)
 
     self.environment()
-
-    self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
+    self.cameratab()
+    
+    
+    self.notebook.append_page(self.maingrid, Gtk.Label("x10 Environment"))
+    self.notebook.append_page(self.vbox, Gtk.Label("Camera"))
+    
     threading.Thread(target=self.askdformods).start()
     threading.Thread(target=self.checkAlarm).start()
     
     
     self.window.show_all()
+    
+  def cameratab (self):
+    self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    self.cam=Gtk.Image()
+    self.vbox.pack_start(self.cam, True, False, 0)
+    
 
+    image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+    self.camopt = Gtk.Button(label=" Properties", image=image)
+    self.camopt.connect("clicked", self.cameracfg)
+    self.vbox.pack_start(self.camopt, True, False, 0)
+    
+    
+    
+    self.hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    self.vbox.pack_start(self.hbox2, True, True, 0)
+    
+    
+    
+    self.hbox2.pack_start(Gtk.Label("Record when "), True, True, 0)
+    self.ad=Gtk.Switch()
+    self.hbox2.pack_start(self.ad, True, True, 0)
+    
+  def cameracfg (self, button):
+    self.window6 = self.builder.get_object("dialog5")
+    self.window6.connect("delete_event", self.on_button10_clicked)
+    self.builder.get_object("entry4").set_text(self.Camera[0])
+    self.builder.get_object("entry5").set_text(self.Camera[1])
+    self.window6.show_all()
+
+    
+    
+  def camera (self):
+    ic2 = Ice.initialize()    
+    obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
+    cam = jderobot.CameraPrx.checkedCast(obj2)
+    while True:
+      if threads == False or self.CameraRun == False:
+        break
+      data = cam.getImageData("RGB8")
+      Gdk.threads_enter()
+      self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+
+      self.cam.set_from_pixbuf(self.img_pixbuf)
+      Gdk.threads_leave()
+    ic2.destroy()
+  
   def setAlarm(self, name, sh, sm, eh, em, act):
     for i in self.Modus:
       if i.name == name:
@@ -310,6 +368,21 @@ class viewGUI:
     self.change3.disconnect(self.lastsignal3)
     return True
     
+  def on_button10_clicked(self, button, event=None):
+    self.CameraRun = False
+    self.window6.hide()
+    return True    
+
+  def on_button11_clicked(self, button, event=None):
+    self.CameraRun = False
+    self.window6.hide()
+    self.Camera[0] = self.builder.get_object("entry4").get_text()
+    self.Camera[1] = self.builder.get_object("entry5").get_text()
+    if self.CameraRun == False:
+      self.CameraRun = True
+      threading.Thread(target=self.camera).start()
+  
+    
   def on_button5_clicked(self, button, mod):
     name = self.builder.get_object("entry1").get_text()
     if mod.name != name:
@@ -329,9 +402,8 @@ class viewGUI:
     
     image = Gtk.Image(stock=Gtk.STOCK_ADD)
     add_button = Gtk.Button(label="Add Module", image=image)
-    add_button.set_size_request(30,30)
     add_button.connect("clicked", self.on_addModule)
-    self.maingrid.attach(add_button, 0, 1, 2, 3)
+    self.maingrid.attach(add_button, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     
   def modtable (self):
@@ -340,31 +412,31 @@ class viewGUI:
       self.table = Gtk.Table(1, 5, True)
     else:
       self.table = Gtk.Table(len(self.Modus), 5, True)
-    self.maingrid.attach(self.table, 0, 1, 1, 2)
+    self.maingrid.attach(self.table, 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     
     houseLabel = Gtk.Label()
     houseLabel.set_markup("<b><big>House A</big></b>")
-    self.table.attach(houseLabel, 2, 3, 0, 1)
+    self.table.attach(houseLabel, 2, 3, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     
     optionsLabel = Gtk.Label()
     optionsLabel.set_markup("<b>Options</b>")
-    self.table.attach(optionsLabel, 0, 1, 1, 2)
+    self.table.attach(optionsLabel, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     codeLabel = Gtk.Label()
     codeLabel.set_markup("<b>Code</b>")
-    self.table.attach(codeLabel, 1, 2, 1, 2)
+    self.table.attach(codeLabel, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     nameLabel = Gtk.Label()
     nameLabel.set_markup("<b>Name</b>")
-    self.table.attach(nameLabel, 2, 3, 1, 2)
+    self.table.attach(nameLabel, 2, 3, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     typeLabel = Gtk.Label()
     typeLabel.set_markup("<b>Type</b>")
-    self.table.attach(typeLabel, 3, 4, 1, 2)
+    self.table.attach(typeLabel, 3, 4, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     activeLabel = Gtk.Label()
     activeLabel.set_markup("<b>Active</b>")
-    self.table.attach(activeLabel, 4, 5, 1, 2)
+    self.table.attach(activeLabel, 4, 5, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     
     if len(self.Modus) == 0:
       self.window.show_all()
@@ -372,7 +444,7 @@ class viewGUI:
     
     for i in self.Modus:
       optionsbuttons = Gtk.Table(1, 2, True)
-      self.table.attach(optionsbuttons, 0, 1, self.Modus.index(i)+2, self.Modus.index(i)+3)
+      self.table.attach(optionsbuttons, 0, 1, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
       deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
       deletebutton = Gtk.Button(image=deletebuttonimage)
       deletebutton.connect("clicked", self.on_delModule, i)
@@ -387,40 +459,40 @@ class viewGUI:
 
       if i.active == False:
         
-        self.table.attach(Gtk.Label(i.code), 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3)
-        self.table.attach(Gtk.Label(i.name), 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3)
-        self.table.attach(Gtk.Label(i.mtype), 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(Gtk.Label(i.code), 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
+        self.table.attach(Gtk.Label(i.name), 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
+        self.table.attach(Gtk.Label(i.mtype), 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         if net.isSensor(i.name):
-          l4 = Gtk.Button()
+          l4 = Gtk.Button(" ")
           l4.set_name('NoActive')
         else:
           l4 = Gtk.Switch()
           l4.set_active(False)
           l4.connect("button-press-event", self.on_actModule, i)
-        self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
 
       else:
         l1 = Gtk.Label()
         l1.set_markup('<span color="#347C2C">' + i.code + '</span>')
-        self.table.attach(l1, 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(l1, 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         
         l2 = Gtk.Label()
         l2.set_markup('<span color="#347C2C">' + i.name + '</span>')
-        self.table.attach(l2, 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(l2, 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         
         l3 = Gtk.Label()
         l3.set_markup('<span color="#347C2C">' + i.mtype + '</span>')
-        self.table.attach(l3, 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(l3, 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         
        
         if net.isSensor(i.name):
-          l4 = Gtk.Button()
+          l4 = Gtk.Button(label=" ")
           l4.set_name('Active')
         else:
           l4 = Gtk.Switch()
           l4.set_active(True)
           l4.connect("button-press-event", self.on_actModule, i)
-        self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3)
+        self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
 
     self.window.show_all()
         

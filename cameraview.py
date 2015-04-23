@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     while(1):
       cam = jderobot.CameraPrx.checkedCast(obj)
-      data = cam.getImageData()
+      data = cam.getImageData("RGB8")
       imagen = data_to_image (data)
       cv2.imshow('My CameraView (Python)',imagen)
       cv2.waitKey(30)
