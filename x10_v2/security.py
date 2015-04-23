@@ -5,21 +5,18 @@ import x10
 from Colors import Colors
 from threading import Thread, Timer
 import threading
-import time
+import time, datetime
 
 
 
 
 class viewGUI:
 
-  asktime = 5
   Modus = []
-  Alarms = []
-  Rules = []
 
   def __init__(self):
     self.builder = Gtk.Builder()
-    self.builder.add_from_file("x10view.glade")
+    self.builder.add_from_file("security.glade")
     self.builder.connect_signals(self)
     self.window = self.builder.get_object("window1")
     self.window.connect("delete-event", Gtk.main_quit)
@@ -43,11 +40,45 @@ class viewGUI:
 
     self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
     threading.Thread(target=self.askdformods).start()
+    threading.Thread(target=self.checkAlarm).start()
+    
     
     self.window.show_all()
-    
+
+  def setAlarm(self, name, sh, sm, eh, em, act):
+    for i in self.Modus:
+      if i.name == name:
+        i.setcfgAlarm(sh,sm,eh,em,act)
+        break
+  
+  
+  def getAlarm(self, name):
+    for i in self.Modus:
+      if i.name == name:
+        alarm = i.getcfgAlarm()
+        return [alarm[0], int(alarm[1]), int(alarm[2])/5, int(alarm[3]),int(alarm[4])/5]
+
+
+
+  def checkAlarm (self):
+    while True:
+      if threads == False:
+        break
+      now = datetime.datetime.now()
+      t = str(now.hour).zfill(2)  + ":" + str(now.minute)
+      for i in self.Modus:
+        if i.alarm_act:
+          if t == i.alarm_start:
+            net.setActive(i.name)
+          if t == i.alarm_end:
+            net.setInactive(i.name)
+      time.sleep(1) 
+      
+      
   def askdformods (self):
     while True:
+      if threads == False:
+        break
       newmod = self.parseMod(net.getEnvironment())
       if len(self.Modus) != len(newmod):
         Gdk.threads_enter()
@@ -67,6 +98,7 @@ class viewGUI:
             self.modtable()
             Gdk.threads_leave()
             break
+              
 
 
   def parsemymods (self):
@@ -82,11 +114,55 @@ class viewGUI:
     if s != "":
       pieces = s.split("|")
     return pieces
+    
+    
+  def getRule(self, name):
+    for i in self.Modus:
+      if i.name == name:
+        alarm = i.getRules()
+        return "|".join(alarm)
+
+  def setRule(self, name, SenState, selectMod, Action):
+    for i in self.Modus:
+      if i.name == name:
+        i.setRules(SenState,selectMod,Action)
+        break
+
+  def delRule(self, name, rule):
+    for i in self.Modus:
+      if i.name == name:
+        i.delRules(rule)
+        break
+
+  def doRules(self,name, state):
+    for i in self.Modus:
+      if i.name == name:
+        rules = i.getRules()
+        for r in rules:
+          pieces = r.split("|")
+          if pieces[0] == "On" and state == True:
+            if pieces[2] == "Activate":
+              for m in self.Modus:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  net.setActive(m.name)
+            else:
+              for m in self.Modus:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  net.setInactive(m.name)
+          elif pieces[0] == "Off" and state == False:
+            if pieces[2] == "Activate":
+              for m in self.Modus:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  net.setActive(m.name)
+            else:
+              for m in self.Modus:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  net.setInactive(m.name)
         
 
 
   def on_button9_clicked (self, button, mod):
-    net.setRule(mod.name,self.builder.get_object("comboboxtext7").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext9").get_active_text())
+    self.setRule(mod.name,self.builder.get_object("comboboxtext7").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext9").get_active_text())
     self.builder.get_object("label13").set_label("")
     self.window5.hide()
     self.change3.disconnect(self.lastsignal3)
@@ -118,7 +194,7 @@ class viewGUI:
 
 
   def rultable (self, mod):
-    rules = self.parseRules(net.getRule(mod.name))
+    rules = self.parseRules(self.getRule(mod.name))
 
     if len(rules) == 0:
       self.table2 = Gtk.Table(1, 4, False)
@@ -191,7 +267,7 @@ class viewGUI:
     self.endh = self.builder.get_object("comboboxtext5")
     self.endm = self.builder.get_object("comboboxtext6")
     # if no estaba programado antes
-    alarm = self.parseAlarm(net.getAlarm(mod.name))
+    alarm = self.getAlarm(mod.name)
     self.starth.set_active(alarm[1])
     self.startm.set_active(alarm[2])
     self.endh.set_active(alarm[3])
@@ -213,7 +289,7 @@ class viewGUI:
     name = self.builder.get_object("entry3").get_text()
     if mod.name != name:
       net.changeNamebyCode(name, mod.code)
-    net.setAlarm(mod.name, self.starth.get_active_text(), self.startm.get_active_text(),self.endh.get_active_text(),self.endm.get_active_text(),self.ton.get_active())
+    self.setAlarm(mod.name, self.starth.get_active_text(), self.startm.get_active_text(),self.endh.get_active_text(),self.endm.get_active_text(),self.ton.get_active())
     self.table.destroy()
     self.modtable()
     self.builder.get_object("entry3").set_text("")
@@ -259,7 +335,7 @@ class viewGUI:
     
     
   def modtable (self):
-    self.Modus = self.parseMod(net.getEnvironment())
+    self.Modus = self.assingmod(self.parseMod(net.getEnvironment()))
     if len(self.Modus) == 0:
       self.table = Gtk.Table(1, 5, True)
     else:
@@ -403,6 +479,8 @@ class viewGUI:
     self.window2.hide()
     return True
     
+      
+      
   def parseMod (self,s):
     def str_to_bool(s):
       if s == 'True':
@@ -419,31 +497,40 @@ class viewGUI:
         mo.append(newmod)
       return mo
     return pieces
-    #self.modtable()
     
-  def parseAlarm (self,s):
-    def str_to_bool(s):
-      if s == 'True':
-         return True
-      else:
-         return False
-             
-    pieces = s.split("|")
-    pieces[0] = str_to_bool(pieces[0])
-    pieces[1] = int(pieces[1])
-    pieces[2] = int(pieces[2])/5
-    pieces[3] = int(pieces[3])
-    pieces[4] = int(pieces[4])/5
-    return pieces
-    
-
+  def assingmod (self, mo):
+    mo2 = list(self.Modus)
+    if len(mo2) == 0:
+      mo2 = mo
+      return mo2
+    if len(mo) > len(mo2):
+      mo2.append(mo[-1])
+      return mo2
+    for n in mo2:
+      found = False
+      for i in mo:
+        if i.code == n.code:
+          if i.isSensor() and i.active != n.active:
+            self.doRules(n.name, i.active)
+          found = True
+          n.name = i.name
+          n.active = i.active
+          n.mtype = i.mtype
+          break
+      if found == False:
+        #elemento n borrado
+        del mo2[mo2.index(n)]
+    return mo2
+        
+            
+     
         
 
 if __name__ == "__main__":
   settings = Gtk.Settings.get_default()
   settings.props.gtk_button_images = True
   #GObject.threads_init()
-
+  threads =True
   status = 0
   ic = None
   try:
@@ -462,9 +549,9 @@ if __name__ == "__main__":
     Gtk.main()
     Gdk.threads_leave()
     
-    #Gtk.main()
-
-      
+    threads =False
+    
+         
     
   except:
     traceback.print_exc()
@@ -480,6 +567,6 @@ if __name__ == "__main__":
         status = 1
   
   
-  
+
   sys.exit(status)
 

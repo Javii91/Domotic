@@ -144,7 +144,10 @@ class NetI(x10.Net):
               break
         if found == False:
           print txt.warning("  Recognised module not added before. Now added as noName.")
-          self.addModule("noName", mcode, "Unknown", False)  
+          if out.find("rcvi func           On : hc") != -1:
+            self.addModule("noName", mcode, "Unknown", True)  
+          if out.find("rcvi func          Off : hc") != -1:
+            self.addModule("noName", mcode, "Unknown", False)  
           for i in Modules:
             if i.code == mcode and i.isSensor:
               if out.find("rcvi func           On : hc") != -1:
