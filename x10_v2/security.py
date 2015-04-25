@@ -6,12 +6,14 @@ from Colors import Colors
 from threading import Thread, Timer
 import threading
 import cv2
+import cv
 import sys
 import cairo
 import jderobot
 import numpy
 import Image
 import time, datetime
+from datetime import datetime
 
 
 
@@ -21,6 +23,10 @@ class viewGUI:
   Modus = []
   Camera = ["localhost","9999"]
   CameraRun = False
+  motion = False
+  record_rdy1 = False
+  record_rdy2 = False
+  record = False
 
   def __init__(self):
     self.builder = Gtk.Builder()
@@ -43,9 +49,10 @@ class viewGUI:
     
     self.notebook = Gtk.Notebook()
     self.window.add(self.notebook)
-
-    self.environment()
+    
     self.cameratab()
+    self.environment()
+    
     
     
     self.notebook.append_page(self.maingrid, Gtk.Label("x10 Environment"))
@@ -56,6 +63,22 @@ class viewGUI:
     
     
     self.window.show_all()
+    self.on_camrun()
+    
+  def on_camrun (self):
+    if self.CameraRun == False:
+      self.motiontable.hide()
+      self.motiontable2.hide() 
+      self.labelmt.hide()
+      self.ad.hide()
+      motion = False
+      self.radbut3.set_active(True)
+      self.ad.set_active(False)
+    else:
+      self.motiontable2.show() 
+      self.labelmt.show()
+      self.ad.show()
+      self.radbut3.set_active(True)
     
   def cameratab (self):
     self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -70,14 +93,74 @@ class viewGUI:
     
     
     
-    self.hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    self.vbox.pack_start(self.hbox2, True, True, 0)
+    self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    self.vbox.pack_start(self.hbox, True, False, 0)
     
     
+    self.labelmt = Gtk.Label("Motion detection ")
+    self.hbox.pack_start(self.labelmt, True, True, 0)
+    self.ad = Gtk.Switch()
+    self.ad.connect("button-press-event", self.on_motion)
+    self.ad.set_active(False)
+    self.hbox.pack_start(self.ad, True, True, 0)
     
-    self.hbox2.pack_start(Gtk.Label("Record when "), True, True, 0)
-    self.ad=Gtk.Switch()
-    self.hbox2.pack_start(self.ad, True, True, 0)
+    self.radbut3 = Gtk.RadioButton(group=None,label="No record")
+    
+    
+    self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    self.motiontable = Gtk.Table(4, 2, True)
+    self.motiontable.attach(Gtk.Label(""), 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label(""), 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Objects in motion:"), 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.campeoplecounter = Gtk.Label("0")
+    self.motiontable.attach(self.campeoplecounter, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when motion of")
+    self.motiontable.attach(self.radbut1, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.vbox.pack_start(self.motiontable, True, True, 0)
+    
+    
+    self.motiontable2 = Gtk.Table(2, 2, False)
+    self.radbut2 = Gtk.RadioButton(group=self.radbut3, label="Record when motion of")
+    self.motiontable2.attach(self.radbut2, 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable2.attach(self.radbut3, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.combomotion = Gtk.ComboBoxText()
+    self.load_sensors_combotext(self.combomotion)
+    self.motiontable2.attach(self.combomotion, 1, 2, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)  
+    self.vbox.pack_start(self.motiontable2, True, True, 0)
+   
+    self.radbut1.connect("toggled", self.motionrec_tog, 1)
+    self.radbut2.connect("toggled", self.motionrec_tog, 2)
+    self.radbut3.connect("toggled", self.motionrec_tog, 3)
+    
+  def load_sensors_combotext(self, widget):
+    widget.remove_all()
+    for i in self.Modus:
+      if i.isSensor():
+        widget.append_text("("+i.code+") "+i.name)
+    widget.set_active(0)
+  
+  def motionrec_tog (self, button, n):
+    if n == 1:
+      self.record_rdy1 = True
+      self.record_rdy2 = False
+    if n == 2:
+      self.record_rdy2 = True
+      self.record_rdy1 = False
+    if n == 3:
+      self.record_rdy1 = False
+      self.record_rdy2 = False
+      self.record = False
+    
+
+  def on_motion (self, button, event):
+    if self.motion == False:
+      self.motion = True
+      self.motiontable.show() 
+    else:
+      self.motion = False
+      self.motiontable.hide() 
+      self.radbut3.set_active(True)
     
   def cameracfg (self, button):
     self.window6 = self.builder.get_object("dialog5")
@@ -89,18 +172,135 @@ class viewGUI:
     
     
   def camera (self):
-    ic2 = Ice.initialize()    
-    obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
-    cam = jderobot.CameraPrx.checkedCast(obj2)
+    def data_to_image (data, rgbObgr):
+      img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
+      pix = numpy.array(img)
+      return pix
+  
+    try:
+      ic2 = Ice.initialize()    
+      obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
+      cam = jderobot.CameraPrx.checkedCast(obj2)
+    except:
+      print "Connection Failed"
+      Gdk.threads_enter()
+      self.CameraRun = False
+      self.on_camrun()
+      Gdk.threads_leave()
+      return
+    
+    # motion
+    frame_size = (320,240)
+    color_image = cv.CreateImage(frame_size, 8, 3)
+    grey_image = cv.CreateImage(frame_size, cv.IPL_DEPTH_8U, 1)
+    moving_average = cv.CreateImage(frame_size, cv.IPL_DEPTH_32F, 3)
+    
+    first = True
+    first_rec = True
+    first_zero = False
+    
+    
     while True:
       if threads == False or self.CameraRun == False:
         break
+      
       data = cam.getImageData("RGB8")
-      Gdk.threads_enter()
-      self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      if self.record == False:
+        first_rec = True
+      
+      if first_rec == True and self.record == True:
+        out = cv2.VideoWriter(datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
+        first_rec = False
+        
+      if self.motion == True:
+        # motion
+        imagen = data_to_image (data, "RGB")
+        color_image = cv.fromarray(imagen)
+      
+        # Smooth to get rid of false positives
+        cv.Smooth(color_image, color_image, cv.CV_GAUSSIAN, 3, 0)
 
-      self.cam.set_from_pixbuf(self.img_pixbuf)
-      Gdk.threads_leave()
+        if first:
+          difference = color_image
+          temp = color_image
+          cv.ConvertScale(color_image, moving_average, 1.0, 0.0)
+          first = False
+        else:
+          cv.RunningAvg(color_image, moving_average, 0.030, None)
+
+        # Convert the scale of the moving average.
+        cv.ConvertScale(moving_average, temp, 1.0, 0.0)
+
+        # Minus the current frame from the moving average.
+        cv.AbsDiff(color_image, temp, difference)
+
+        # Convert the image to grayscale.
+        cv.CvtColor(difference, grey_image, cv.CV_RGB2GRAY)
+
+        # Convert the image to black and white.
+        cv.Threshold(grey_image, grey_image, 70, 255, cv.CV_THRESH_BINARY)
+
+        # Dilate and erode to get people blobs
+        cv.Dilate(grey_image, grey_image, None, 18)
+        cv.Erode(grey_image, grey_image, None, 10)
+
+        storage = cv.CreateMemStorage(0)
+        contour = cv.FindContours(grey_image, storage, cv.CV_RETR_CCOMP, cv.CV_CHAIN_APPROX_SIMPLE)
+        points = []
+        
+        n = 0
+        while contour:
+          n = n +1
+          bound_rect = cv.BoundingRect(list(contour))
+          contour = contour.h_next()
+
+          pt1 = (bound_rect[0], bound_rect[1])
+          pt2 = (bound_rect[0] + bound_rect[2], bound_rect[1] + bound_rect[3])
+          points.append(pt1)
+          points.append(pt2)
+          cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
+      
+        if self.record_rdy1 and n > 0:
+          self.record = True
+          first_zero = True
+          
+        if first_rec == True and self.record == True:
+          out = cv2.VideoWriter(datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
+          first_rec = False
+        
+        
+          
+        if self.record and n == 0 and first_zero:
+          first_zero = False
+          t_start = time.time()
+        elif self.record and n == 0 and time.time() - t_start > 5:
+          self.record = False
+      
+        if self.record:
+          imagen2 = data_to_image (data, "BGR")
+          out.write(imagen2)
+        Gdk.threads_enter()
+        self.campeoplecounter.set_markup("<b>"+str(n)+"</b>")
+        self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        self.cam.set_from_pixbuf(self.img_pixbuf)
+        Gdk.threads_leave()
+        
+        
+      
+      else:
+        if self.record:
+          imagen = data_to_image (data, "BGR")
+          out.write(imagen)
+        Gdk.threads_enter()
+        self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        self.cam.set_from_pixbuf(self.img_pixbuf)
+        Gdk.threads_leave()
+        
+        
+
+          
+      
+      
     ic2.destroy()
   
   def setAlarm(self, name, sh, sm, eh, em, act):
@@ -122,7 +322,7 @@ class viewGUI:
     while True:
       if threads == False:
         break
-      now = datetime.datetime.now()
+      now = datetime.now()
       t = str(now.hour).zfill(2)  + ":" + str(now.minute)
       for i in self.Modus:
         if i.alarm_act:
@@ -255,7 +455,7 @@ class viewGUI:
     rules = self.parseRules(self.getRule(mod.name))
 
     if len(rules) == 0:
-      self.table2 = Gtk.Table(1, 4, False)
+      self.table2 = Gtk.Table(2, 4, False)
     else:
       self.table2 = Gtk.Table(len(rules)/3, 4, False)
     self.box5.pack_start(self.table2, True, True, 0)
@@ -369,8 +569,11 @@ class viewGUI:
     return True
     
   def on_button10_clicked(self, button, event=None):
+    self.radbut3.set_active(True)
     self.CameraRun = False
+    self.motion = False
     self.window6.hide()
+    self.on_camrun()
     return True    
 
   def on_button11_clicked(self, button, event=None):
@@ -380,6 +583,8 @@ class viewGUI:
     self.Camera[1] = self.builder.get_object("entry5").get_text()
     if self.CameraRun == False:
       self.CameraRun = True
+      self.on_camrun()
+      self.radbut3.set_active(True)
       threading.Thread(target=self.camera).start()
   
     
@@ -440,6 +645,7 @@ class viewGUI:
     
     if len(self.Modus) == 0:
       self.window.show_all()
+      self.on_camrun()
       return
     
     for i in self.Modus:
@@ -495,6 +701,7 @@ class viewGUI:
         self.table.attach(l4, 4, 5, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
 
     self.window.show_all()
+    self.on_camrun()
         
 
   def on_delModule(self, button, mod):
@@ -536,9 +743,12 @@ class viewGUI:
     name = self.builder.get_object("entry2").get_text()
     #Modus.append(Mod(name, code, mtype))
     #anadir modulo
-    net.addModule(name, code, mtype)
+    if len(self.Modus) <= 16:
+      net.addModule(name, code, mtype)
     self.table.destroy()
     self.modtable()
+    
+    self.load_sensors_combotext(self.combomotion)
     
     self.builder.get_object("entry2").set_text("")
     self.window2.hide()
@@ -584,6 +794,12 @@ class viewGUI:
         if i.code == n.code:
           if i.isSensor() and i.active != n.active:
             self.doRules(n.name, i.active)
+            if self.record_rdy2 and self.combomotion.get_active_text() == "("+n.code+") "+n.name:
+              if i.active:
+                self.record = True
+              else:
+                self.record = False
+              
           found = True
           n.name = i.name
           n.active = i.active
@@ -611,10 +827,10 @@ if __name__ == "__main__":
     net = x10.NetPrx.checkedCast(base)
     if not net:
         raise RuntimeError("Invalid proxy")
-    
+
 
     GUI = viewGUI()
-
+    
     GLib.threads_init()
     Gdk.threads_init()
     Gdk.threads_enter()
