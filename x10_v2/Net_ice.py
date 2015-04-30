@@ -65,6 +65,9 @@ if not _M_x10.__dict__.has_key('Net'):
         def isSensor(self, name, current=None):
             pass
 
+        def isCode(self, code, current=None):
+            pass
+
         def delModulebyCode(self, code, current=None):
             pass
 
@@ -160,6 +163,15 @@ if not _M_x10.__dict__.has_key('Net'):
         def end_isSensor(self, _r):
             return _M_x10.Net._op_isSensor.end(self, _r)
 
+        def isCode(self, code, _ctx=None):
+            return _M_x10.Net._op_isCode.invoke(self, ((code, ), _ctx))
+
+        def begin_isCode(self, code, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_isCode.begin(self, ((code, ), _response, _ex, _sent, _ctx))
+
+        def end_isCode(self, _r):
+            return _M_x10.Net._op_isCode.end(self, _r)
+
         def delModulebyCode(self, code, _ctx=None):
             return _M_x10.Net._op_delModulebyCode.invoke(self, ((code, ), _ctx))
 
@@ -226,6 +238,7 @@ if not _M_x10.__dict__.has_key('Net'):
     Net._op_addModule = IcePy.Operation('addModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
     Net._op_delModule = IcePy.Operation('delModule', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_isSensor = IcePy.Operation('isSensor', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
+    Net._op_isCode = IcePy.Operation('isCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
     Net._op_delModulebyCode = IcePy.Operation('delModulebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), None, ())
     Net._op_changeNamebyCode = IcePy.Operation('changeNamebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
     Net._op_changeName = IcePy.Operation('changeName', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())

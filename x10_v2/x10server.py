@@ -25,6 +25,13 @@ class NetI(x10.Net):
         response += txt.gray(str(i)+"\n")
     print response
     
+  def isCode(self, code, current=None):
+    for i in Modules:
+      if (i.code == code):
+        return True
+    return False
+        
+    
   def getEnvironment(self, current=None):
     response = ""
     for i in Modules:

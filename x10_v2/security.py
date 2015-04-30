@@ -21,6 +21,7 @@ from datetime import datetime
 class viewGUI:
 
   Modus = []
+  x10 = ["localhost", "10000"]
   Camera = ["localhost","9999"]
   CameraRun = False
   motion = False
@@ -28,7 +29,7 @@ class viewGUI:
   record_rdy2 = False
   record = False
 
-  def __init__(self):
+  def __init__(self, propsx10 = None, propscam= None):
     self.builder = Gtk.Builder()
     self.builder.add_from_file("security.glade")
     self.builder.connect_signals(self)
@@ -46,24 +47,87 @@ class viewGUI:
       Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
     )
     
-    
+
+      
     self.notebook = Gtk.Notebook()
     self.window.add(self.notebook)
     
     self.cameratab()
-    self.environment()
+    self.load_other()
+    
+    if propsx10:
+      self.checkModules(propsx10)
+             
+      self.environment()
+      self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
+      
+      threading.Thread(target=self.askdformods).start()
+      threading.Thread(target=self.checkAlarm).start()
+      
+      #self.maingrid.show_all()
+    else: 
+      self.load_environment()
+      self.notebook.append_page(self.vbox2, Gtk.Label("Environment"))
     
     
     
-    self.notebook.append_page(self.maingrid, Gtk.Label("x10 Environment"))
+    
+
     self.notebook.append_page(self.vbox, Gtk.Label("Camera"))
+    self.notebook.append_page(self.vbox3, Gtk.Label("Other"))
     
-    threading.Thread(target=self.askdformods).start()
-    threading.Thread(target=self.checkAlarm).start()
+    #threading.Thread(target=self.askdformods).start()
+    #threading.Thread(target=self.checkAlarm).start()
     
     
     self.window.show_all()
     self.on_camrun()
+    
+  def load_other(self):
+    self.vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+    self.vbox3.pack_start(Gtk.Label("Save cfg to file:"), False, False, 0)
+    self.hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+    self.vbox3.pack_start(self.hbox2, False, False, 0)
+    
+    
+    self.fileother = Gtk.Entry()
+    self.fileother.set_text("security.cfg")
+    image = Gtk.Image(stock=Gtk.STOCK_SAVE_AS)
+    self.otheropt = Gtk.Button(label=" Save", image=image)
+    self.otheropt.connect("clicked", self.save_config, self.fileother.get_text())
+    self.hbox2.pack_start(self.fileother, True, False, 0)
+    self.hbox2.pack_start(self.otheropt, True, False, 0)
+    
+  def save_config (self, button, name):
+    f = open (name, "w")
+    if self.x10[0] != "" and self.x10[1] != 0:
+      f.write("# Environment configuration \n")
+      f.write("x10.Proxy=Net:default -h "+self.x10[0]+" -p " + self.x10[1] +"\n")
+      f.write("\n")
+      for i in self.Modus:
+        f.write("x10.Module."+i.code+".name="+  i.name +"\n")
+        f.write("x10.Module."+i.code+".type="+  i.mtype +"\n")
+        f.write("x10.Module."+i.code+".active="+  str(i.active) +"\n")
+        f.write("x10.Module."+i.code+".alarm_act="+  str(i.alarm_act) +"\n")
+        f.write("x10.Module."+i.code+".alarm_start="+  i.alarm_start +"\n")
+        f.write("x10.Module."+i.code+".alarm_end="+  i.alarm_end +"\n")
+        a = 0
+        for n in i.rules:
+          f.write("x10.Module."+i.code+".rules."+a+"="+ n+"\n")
+          a += 1
+        f.write("\n")
+    if self.Camera[0] != "" and self.Camera[1] != 0:
+      f.write("# Camera configuration \n")
+      f.write("cam.Proxy=CameraA:default -h "+self.Camera[0]+" -p " + self.Camera[1] +"\n")
+    f.close()
+
+  def load_environment (self):
+    self.vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    
+    image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+    self.envopt = Gtk.Button(label=" Properties", image=image)
+    self.envopt.connect("clicked", self.cameracfg, "env")
+    self.vbox2.pack_start(self.envopt, True, False, 0)
     
   def on_camrun (self):
     if self.CameraRun == False:
@@ -88,7 +152,7 @@ class viewGUI:
 
     image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
     self.camopt = Gtk.Button(label=" Properties", image=image)
-    self.camopt.connect("clicked", self.cameracfg)
+    self.camopt.connect("clicked", self.cameracfg, "cam")
     self.vbox.pack_start(self.camopt, True, False, 0)
     
     
@@ -162,11 +226,16 @@ class viewGUI:
       self.motiontable.hide() 
       self.radbut3.set_active(True)
     
-  def cameracfg (self, button):
+  def cameracfg (self, button, tab):
     self.window6 = self.builder.get_object("dialog5")
     self.window6.connect("delete_event", self.on_button10_clicked)
-    self.builder.get_object("entry4").set_text(self.Camera[0])
-    self.builder.get_object("entry5").set_text(self.Camera[1])
+    if tab == "cam":
+      self.builder.get_object("entry4").set_text(self.Camera[0])
+      self.builder.get_object("entry5").set_text(self.Camera[1])
+    elif tab == "env":
+      self.builder.get_object("entry4").set_text(self.x10[0])
+      self.builder.get_object("entry5").set_text(self.x10[1])
+    self.lastsignal0 = self.builder.get_object("button11").connect("clicked", self.on_button11_clicked, tab)
     self.window6.show_all()
 
     
@@ -178,8 +247,9 @@ class viewGUI:
       return pix
   
     try:
-      ic2 = Ice.initialize()    
-      obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
+      #ic2 = Ice.initialize()    
+      #obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
+      obj2 = ic.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
       cam = jderobot.CameraPrx.checkedCast(obj2)
     except:
       print "Connection Failed"
@@ -301,7 +371,7 @@ class viewGUI:
           
       
       
-    ic2.destroy()
+    #ic2.destroy()
   
   def setAlarm(self, name, sh, sm, eh, em, act):
     for i in self.Modus:
@@ -327,9 +397,9 @@ class viewGUI:
       for i in self.Modus:
         if i.alarm_act:
           if t == i.alarm_start:
-            net.setActive(i.name)
+            self.net.setActive(i.name)
           if t == i.alarm_end:
-            net.setInactive(i.name)
+            self.net.setInactive(i.name)
       time.sleep(1) 
       
       
@@ -337,7 +407,7 @@ class viewGUI:
     while True:
       if threads == False:
         break
-      newmod = self.parseMod(net.getEnvironment())
+      newmod = self.parseMod(self.net.getEnvironment())
       if len(self.Modus) != len(newmod):
         Gdk.threads_enter()
         self.table.destroy()
@@ -402,20 +472,20 @@ class viewGUI:
             if pieces[2] == "Activate":
               for m in self.Modus:
                 if m.name == pieces[1].split(")")[1][1:]:
-                  net.setActive(m.name)
+                  self.net.setActive(m.name)
             else:
               for m in self.Modus:
                 if m.name == pieces[1].split(")")[1][1:]:
-                  net.setInactive(m.name)
+                  self.net.setInactive(m.name)
           elif pieces[0] == "Off" and state == False:
             if pieces[2] == "Activate":
               for m in self.Modus:
                 if m.name == pieces[1].split(")")[1][1:]:
-                  net.setActive(m.name)
+                  self.net.setActive(m.name)
             else:
               for m in self.Modus:
                 if m.name == pieces[1].split(")")[1][1:]:
-                  net.setInactive(m.name)
+                  self.net.setInactive(m.name)
         
 
 
@@ -429,7 +499,7 @@ class viewGUI:
     return True
 
   def on_delrul (self, button, mod, rule):
-    net.delRule(mod.name, rule)
+    self.net.delRule(mod.name, rule)
     self.table2.destroy()
     self.rultable(mod)
 		
@@ -546,7 +616,7 @@ class viewGUI:
   def on_button2_clicked(self, button, mod):
     name = self.builder.get_object("entry3").get_text()
     if mod.name != name:
-      net.changeNamebyCode(name, mod.code)
+      self.net.changeNamebyCode(name, mod.code)
     self.setAlarm(mod.name, self.starth.get_active_text(), self.startm.get_active_text(),self.endh.get_active_text(),self.endm.get_active_text(),self.ton.get_active())
     self.table.destroy()
     self.modtable()
@@ -569,6 +639,7 @@ class viewGUI:
     return True
     
   def on_button10_clicked(self, button, event=None):
+    self.builder.get_object("button11").disconnect(self.lastsignal0)
     self.radbut3.set_active(True)
     self.CameraRun = False
     self.motion = False
@@ -576,22 +647,46 @@ class viewGUI:
     self.on_camrun()
     return True    
 
-  def on_button11_clicked(self, button, event=None):
-    self.CameraRun = False
-    self.window6.hide()
-    self.Camera[0] = self.builder.get_object("entry4").get_text()
-    self.Camera[1] = self.builder.get_object("entry5").get_text()
-    if self.CameraRun == False:
-      self.CameraRun = True
-      self.on_camrun()
-      self.radbut3.set_active(True)
-      threading.Thread(target=self.camera).start()
+  def on_button11_clicked(self, button, tab):
+    self.builder.get_object("button11").disconnect(self.lastsignal0)
+    if tab == "cam":
+      self.CameraRun = False
+      self.window6.hide()
+      self.Camera[0] = self.builder.get_object("entry4").get_text()
+      self.Camera[1] = self.builder.get_object("entry5").get_text()
+      if self.CameraRun == False:
+        self.CameraRun = True
+        self.on_camrun()
+        self.radbut3.set_active(True)
+        threading.Thread(target=self.camera).start()
+    elif tab == "env":
+      self.window6.hide()
+      self.x10[0] = self.builder.get_object("entry4").get_text()
+      self.x10[1] = self.builder.get_object("entry5").get_text()
+      try:
+        #ic = Ice.initialize()
+        #base = ic.stringToProxy(ic.getProperties().getProperty("x10view.Proxy"))
+        base = ic.stringToProxy('Net:default -h '+self.x10[0]+' -p ' + self.x10[1])
+        self.net = x10.NetPrx.checkedCast(base)
+      except:
+        print "Connection Failed"
+        #ic.destroy()
+        return
+        
+      self.envopt.destroy()
+      self.environment()
+      self.vbox2.pack_start(self.maingrid, True, False, 0)
+      
+      threading.Thread(target=self.askdformods).start()
+      threading.Thread(target=self.checkAlarm).start()
+      self.maingrid.show_all()
+      
   
     
   def on_button5_clicked(self, button, mod):
     name = self.builder.get_object("entry1").get_text()
     if mod.name != name:
-      net.changeNamebyCode(name, mod.code)
+      self.net.changeNamebyCode(name, mod.code)
     self.table.destroy()
     self.modtable()
     self.builder.get_object("entry1").set_text("")
@@ -612,7 +707,7 @@ class viewGUI:
     
     
   def modtable (self):
-    self.Modus = self.assingmod(self.parseMod(net.getEnvironment()))
+    self.Modus = self.assingmod(self.parseMod(self.net.getEnvironment()))
     if len(self.Modus) == 0:
       self.table = Gtk.Table(1, 5, True)
     else:
@@ -656,7 +751,7 @@ class viewGUI:
       deletebutton.connect("clicked", self.on_delModule, i)
       changebuttonimage = Gtk.Image(stock=Gtk.STOCK_EXECUTE)
       changebutton = Gtk.Button(image=changebuttonimage)
-      if (net.isSensor(i.name)):
+      if (self.net.isSensor(i.name)):
         changebutton.connect("clicked", self.changename, i)
       else:
         changebutton.connect("clicked", self.changenamepro, i)
@@ -668,7 +763,7 @@ class viewGUI:
         self.table.attach(Gtk.Label(i.code), 1, 2, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         self.table.attach(Gtk.Label(i.name), 2, 3, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         self.table.attach(Gtk.Label(i.mtype), 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
-        if net.isSensor(i.name):
+        if self.net.isSensor(i.name):
           l4 = Gtk.Button(" ")
           l4.set_name('NoActive')
         else:
@@ -691,7 +786,7 @@ class viewGUI:
         self.table.attach(l3, 3, 4, self.Modus.index(i)+2, self.Modus.index(i)+3,yoptions=Gtk.AttachOptions.SHRINK)
         
        
-        if net.isSensor(i.name):
+        if self.net.isSensor(i.name):
           l4 = Gtk.Button(label=" ")
           l4.set_name('Active')
         else:
@@ -705,16 +800,16 @@ class viewGUI:
         
 
   def on_delModule(self, button, mod):
-    net.delModulebyCode(mod.code)
+    self.net.delModulebyCode(mod.code)
     self.table.destroy()
     self.modtable()
   
   def on_actModule(self, button, event, mod):
     
     if mod.active:
-      net.setInactive(mod.name)
+      self.net.setInactive(mod.name)
     else:
-      net.setActive(mod.name)
+      self.net.setActive(mod.name)
     self.table.destroy()
     self.modtable()
 
@@ -744,7 +839,7 @@ class viewGUI:
     #Modus.append(Mod(name, code, mtype))
     #anadir modulo
     if len(self.Modus) <= 16:
-      net.addModule(name, code, mtype)
+      self.net.addModule(name, code, mtype)
     self.table.destroy()
     self.modtable()
     
@@ -809,7 +904,43 @@ class viewGUI:
         #elemento n borrado
         del mo2[mo2.index(n)]
     return mo2
+    
+  def checkModules(self, props):
+    def str_to_bool(s):
+      if s == 'True':
+         return True
+      else:
+         return False
+         
+    if "x10.Proxy" in props:
+      self.x10[0] = props["x10.Proxy"].split("Net:default -h ")[1].split(" -p")[0]
+      self.x10[1] = props["x10.Proxy"].split(" -p")[1]
+      
+      try:
+        base = ic.stringToProxy('Net:default -h '+self.x10[0]+' -p ' + self.x10[1])
+        self.net = x10.NetPrx.checkedCast(base)
+        self.Modus = self.assingmod(self.parseMod(self.net.getEnvironment()))
+      except:
+        print "Connection Failed"
         
+    for i in range(1,17):
+      if "x10.Module.A" + str(i) + ".name" in props:
+        if self.net.isCode("A"+str(i)) == False:
+          if props["x10.Module.A" + str(i) + ".type"] == "Lamp":
+            mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
+            mod.setcfgAlarm(int(props["x10.Module.A" + str(i) + ".alarm_start"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_start"][3:5]),
+                            int(props["x10.Module.A" + str(i) + ".alarm_end"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_end"][3:5]), 
+                            str_to_bool(props["x10.Module.A" + str(i) + ".alarm_act"]))        
+            self.Modus.append(mod)
+            self.net.addModule(mod.name, mod.code, mod.mtype)
+          else:
+  
+            mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
+            #if "x10.Module.A" + str(i) + ".rules" in props:
+            #  mod.setRules()
+            self.Modus.append(mod)
+            self.net.addModule(mod.name, mod.code, mod.mtype)
+
             
      
         
@@ -819,42 +950,26 @@ if __name__ == "__main__":
   settings.props.gtk_button_images = True
   #GObject.threads_init()
   threads =True
-  status = 0
-  ic = None
-  try:
-    ic = Ice.initialize(sys.argv)
-    base = ic.stringToProxy(ic.getProperties().getProperty("x10view.Proxy"))
-    net = x10.NetPrx.checkedCast(base)
-    if not net:
-        raise RuntimeError("Invalid proxy")
-
-
+  
+  ic = Ice.initialize(sys.argv)
+  
+  if (sys.argv):
+    propsx10 = ic.getProperties().getPropertiesForPrefix("x10")
+    propscam = ic.getProperties().getPropertiesForPrefix("cam")
+    GUI = viewGUI(propsx10, propscam)
+  else:
     GUI = viewGUI()
     
-    GLib.threads_init()
-    Gdk.threads_init()
-    Gdk.threads_enter()
-    Gtk.main()
-    Gdk.threads_leave()
+  GLib.threads_init()
+  Gdk.threads_init()
+  Gdk.threads_enter()
+  Gtk.main()
+  Gdk.threads_leave()
     
-    threads =False
+  threads =False
     
          
     
-  except:
-    traceback.print_exc()
-    status = 1
-    sys.exit(status)
-
-  if ic:
-    # Clean up
-    try:
-        ic.destroy()
-    except:
-        traceback.print_exc()
-        status = 1
   
-  
-
-  sys.exit(status)
+  sys.exit()
 

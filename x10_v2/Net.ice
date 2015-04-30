@@ -8,6 +8,7 @@ module x10 {
         void addModule(string name, string code, string mtype);
         void delModule(string name);
         bool isSensor(string name);
+        bool isCode(string code);
         void delModulebyCode(string code);
         void changeNamebyCode(string name, string code);
         void changeName(string newname, string name);
