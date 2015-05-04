@@ -13,7 +13,7 @@ module x10 {
         void changeNamebyCode(string name, string code);
         void changeName(string newname, string name);
         bool isActivebyCode(string code);
-        bool isAtive(string name);
+        bool isActive(string name);
     };
 };
 

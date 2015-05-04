@@ -80,7 +80,7 @@ if not _M_x10.__dict__.has_key('Net'):
         def isActivebyCode(self, code, current=None):
             pass
 
-        def isAtive(self, name, current=None):
+        def isActive(self, name, current=None):
             pass
 
         def __str__(self):
@@ -208,14 +208,14 @@ if not _M_x10.__dict__.has_key('Net'):
         def end_isActivebyCode(self, _r):
             return _M_x10.Net._op_isActivebyCode.end(self, _r)
 
-        def isAtive(self, name, _ctx=None):
-            return _M_x10.Net._op_isAtive.invoke(self, ((name, ), _ctx))
+        def isActive(self, name, _ctx=None):
+            return _M_x10.Net._op_isActive.invoke(self, ((name, ), _ctx))
 
-        def begin_isAtive(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
-            return _M_x10.Net._op_isAtive.begin(self, ((name, ), _response, _ex, _sent, _ctx))
+        def begin_isActive(self, name, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_x10.Net._op_isActive.begin(self, ((name, ), _response, _ex, _sent, _ctx))
 
-        def end_isAtive(self, _r):
-            return _M_x10.Net._op_isAtive.end(self, _r)
+        def end_isActive(self, _r):
+            return _M_x10.Net._op_isActive.end(self, _r)
 
         def checkedCast(proxy, facetOrCtx=None, _ctx=None):
             return _M_x10.NetPrx.ice_checkedCast(proxy, '::x10::Net', facetOrCtx, _ctx)
@@ -243,7 +243,7 @@ if not _M_x10.__dict__.has_key('Net'):
     Net._op_changeNamebyCode = IcePy.Operation('changeNamebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
     Net._op_changeName = IcePy.Operation('changeName', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string), ((), IcePy._t_string)), (), None, ())
     Net._op_isActivebyCode = IcePy.Operation('isActivebyCode', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
-    Net._op_isAtive = IcePy.Operation('isAtive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
+    Net._op_isActive = IcePy.Operation('isActive', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (((), IcePy._t_string),), (), IcePy._t_bool, ())
 
     _M_x10.Net = Net
     del Net

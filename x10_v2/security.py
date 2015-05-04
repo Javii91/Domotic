@@ -21,8 +21,8 @@ from datetime import datetime
 class viewGUI:
 
   Modus = []
-  x10 = ["localhost", "10000"]
-  Camera = ["localhost","9999"]
+  x10 = ["", ""]
+  Camera = ["",""]
   CameraRun = False
   motion = False
   record_rdy1 = False
@@ -52,6 +52,9 @@ class viewGUI:
     self.notebook = Gtk.Notebook()
     self.window.add(self.notebook)
     
+    if propscam:
+      self.checkCamera(propscam)
+      
     self.cameratab()
     self.load_other()
     
@@ -61,7 +64,7 @@ class viewGUI:
       self.environment()
       self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
       
-      threading.Thread(target=self.askdformods).start()
+      #threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
       
       #self.maingrid.show_all()
@@ -112,8 +115,12 @@ class viewGUI:
         f.write("x10.Module."+i.code+".alarm_start="+  i.alarm_start +"\n")
         f.write("x10.Module."+i.code+".alarm_end="+  i.alarm_end +"\n")
         a = 0
+        first = True
         for n in i.rules:
-          f.write("x10.Module."+i.code+".rules."+a+"="+ n+"\n")
+          if first == True:
+            f.write("x10.Module."+i.code+".rules="+ str(len(i.rules))+"\n")
+            first = False
+          f.write("x10.Module."+i.code+".rules."+str(a)+"="+ n+"\n")
           a += 1
         f.write("\n")
     if self.Camera[0] != "" and self.Camera[1] != 0:
@@ -393,7 +400,7 @@ class viewGUI:
       if threads == False:
         break
       now = datetime.now()
-      t = str(now.hour).zfill(2)  + ":" + str(now.minute)
+      t = str(now.hour).zfill(2)  + ":" + str(now.minute).zfill(2)
       for i in self.Modus:
         if i.alarm_act:
           if t == i.alarm_start:
@@ -456,6 +463,7 @@ class viewGUI:
         i.setRules(SenState,selectMod,Action)
         break
 
+
   def delRule(self, name, rule):
     for i in self.Modus:
       if i.name == name:
@@ -499,7 +507,7 @@ class viewGUI:
     return True
 
   def on_delrul (self, button, mod, rule):
-    self.net.delRule(mod.name, rule)
+    self.delRule(mod.name, rule)
     self.table2.destroy()
     self.rultable(mod)
 		
@@ -677,7 +685,7 @@ class viewGUI:
       self.environment()
       self.vbox2.pack_start(self.maingrid, True, False, 0)
       
-      threading.Thread(target=self.askdformods).start()
+      #threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
       self.maingrid.show_all()
       
@@ -836,6 +844,8 @@ class viewGUI:
     code = self.builder.get_object("comboboxtext1").get_active_text()
     mtype = self.builder.get_object("comboboxtext2").get_active_text()
     name = self.builder.get_object("entry2").get_text()
+    if name == "":
+      name = self.builder.get_object("comboboxtext1").get_active_text()
     #Modus.append(Mod(name, code, mtype))
     #anadir modulo
     if len(self.Modus) <= 16:
@@ -878,10 +888,11 @@ class viewGUI:
   def assingmod (self, mo):
     mo2 = list(self.Modus)
     if len(mo2) == 0:
-      mo2 = mo
+      mo2 = mo[:]
       return mo2
     if len(mo) > len(mo2):
       mo2.append(mo[-1])
+      print "cargo2"
       return mo2
     for n in mo2:
       found = False
@@ -905,6 +916,10 @@ class viewGUI:
         del mo2[mo2.index(n)]
     return mo2
     
+  def checkCamera (self, props):
+    self.Camera[0] = props["cam.Proxy"].split("CameraA:default -h ")[1].split(" -p")[0]
+    self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
+    
   def checkModules(self, props):
     def str_to_bool(s):
       if s == 'True':
@@ -925,21 +940,24 @@ class viewGUI:
         
     for i in range(1,17):
       if "x10.Module.A" + str(i) + ".name" in props:
-        if self.net.isCode("A"+str(i)) == False:
-          if props["x10.Module.A" + str(i) + ".type"] == "Lamp":
-            mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
-            mod.setcfgAlarm(int(props["x10.Module.A" + str(i) + ".alarm_start"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_start"][3:5]),
+        if self.net.isCode("A"+str(i)):
+          self.net.delModulebyCode("A"+str(i))
+          self.Modus = self.assingmod(self.parseMod(self.net.getEnvironment()))
+        if props["x10.Module.A" + str(i) + ".type"] == "Lamp":
+          mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
+          mod.setcfgAlarm(int(props["x10.Module.A" + str(i) + ".alarm_start"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_start"][3:5]),
                             int(props["x10.Module.A" + str(i) + ".alarm_end"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_end"][3:5]), 
                             str_to_bool(props["x10.Module.A" + str(i) + ".alarm_act"]))        
-            self.Modus.append(mod)
-            self.net.addModule(mod.name, mod.code, mod.mtype)
-          else:
-  
-            mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
-            #if "x10.Module.A" + str(i) + ".rules" in props:
-            #  mod.setRules()
-            self.Modus.append(mod)
-            self.net.addModule(mod.name, mod.code, mod.mtype)
+          self.Modus.append(mod)
+          self.net.addModule(mod.name, mod.code, mod.mtype)
+        else:
+          mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
+          if "x10.Module.A" + str(i) + ".rules" in props:
+            for m in range(0,int(props["x10.Module.A" + str(i) + ".rules"])):
+              mod.setRules(props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[0],props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[1],props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[2])
+          self.Modus.append(mod)
+          self.net.addModule(mod.name, mod.code, mod.mtype)
+
 
             
      

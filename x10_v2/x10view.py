@@ -235,6 +235,8 @@ class viewGUI:
     code = self.builder.get_object("comboboxtext1").get_active_text()
     mtype = self.builder.get_object("comboboxtext2").get_active_text()
     name = self.builder.get_object("entry2").get_text()
+    if name == "":
+      name = self.builder.get_object("comboboxtext1").get_active_text()
     #Modus.append(Mod(name, code, mtype))
     #anadir modulo
     net.addModule(name, code, mtype)
