@@ -30,6 +30,7 @@ class viewGUI:
   record_rdy1 = False
   record_rdy2 = False
   record = False
+  temprun = False
 
   def __init__(self, propsx10 = None, propscam= None, propstmp= None):
     self.builder = Gtk.Builder()
@@ -132,6 +133,11 @@ class viewGUI:
     if self.Camera[0] != "" and self.Camera[1] != 0:
       f.write("# Camera configuration \n")
       f.write("cam.Proxy=CameraA:default -h "+self.Camera[0]+" -p " + self.Camera[1] +"\n")
+      f.write("\n")
+    if self.Temperature[0] != "" and self.Temperature[1] != 0:
+      f.write("# Temperature configuration \n")
+      f.write("tmp.Proxy=Temperature:default -h "+self.Temperature[0]+" -p " + self.Temperature[1] +"\n")
+      f.write("\n")
     f.close()
 
 
@@ -275,7 +281,7 @@ class viewGUI:
       obj2 = ic.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
       cam = jderobot.CameraPrx.checkedCast(obj2)
     except:
-      print "Connection Failed"
+      print "Camera: Connection Failed"
       Gdk.threads_enter()
       self.CameraRun = False
       self.on_camrun()
@@ -692,9 +698,9 @@ class viewGUI:
         self.tmp = Temp.TemperaturePrx.checkedCast(basetmp)
       except:
         print "Temperature: Connection Failed"
-        print self.Temperature[0], self.Temperature[1], 'Temperature:default -h '+self.Temperature[0]+' -p ' + self.Temperature[1]
         #ic.destroy()
         return
+      self.temprun = True
       self.tmpopt.destroy()
       self.tmpShow = Gtk.Label()
       if tab == "tmp":
@@ -750,7 +756,7 @@ class viewGUI:
         break
       t = self.tmp.getTemperature()
       Gdk.threads_enter()
-      self.tmpShow.set_markup("Temperature: " + "<b>" + "{0:.2f}".format(t) + "</b>")
+      self.tmpShow.set_markup("Temperature: " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "C")
       Gdk.threads_leave()
       time.sleep(1)
       
@@ -766,9 +772,14 @@ class viewGUI:
     add_button.connect("clicked", self.on_addModule)
     self.maingrid.attach(add_button, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
-    self.tmpopt = Gtk.Button(label=" Tmp Properties", image=image)
-    self.tmpopt.connect("clicked", self.cameracfg, "tmp2")
-    self.maingrid.attach(self.tmpopt, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+    
+    if hasattr(self, 'tmpopt'):
+      self.tmpopt.destroy()
+
+    if self.temprun == False:
+      self.tmpopt = Gtk.Button(label=" Tmp Properties", image=image)
+      self.tmpopt.connect("clicked", self.cameracfg, "tmp2")
+      self.maingrid.attach(self.tmpopt, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
     
     
   def modtable (self):
@@ -949,7 +960,6 @@ class viewGUI:
       return mo2
     if len(mo) > len(mo2):
       mo2.append(mo[-1])
-      print "cargo2"
       return mo2
     for n in mo2:
       found = False
@@ -978,8 +988,8 @@ class viewGUI:
     self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
     
   def checkTempcfg (self, props):
-    self.Temperature[0] = props["cam.Proxy"].split("Temperature:default -h ")[1].split(" -p")[0]
-    self.Temperature[1] = props["cam.Proxy"].split(" -p")[1]
+    self.Temperature[0] = props["tmp.Proxy"].split("Temperature:default -h ")[1].split(" -p")[0]
+    self.Temperature[1] = props["tmp.Proxy"].split(" -p")[1]
     
   def checkModules(self, props):
     def str_to_bool(s):
@@ -997,7 +1007,7 @@ class viewGUI:
         self.net = x10.NetPrx.checkedCast(base)
         self.Modus = self.assingmod(self.parseMod(self.net.getEnvironment()))
       except:
-        print "Connection Failed"
+        print "x10: Connection Failed"
         
     for i in range(1,17):
       if "x10.Module.A" + str(i) + ".name" in props:
