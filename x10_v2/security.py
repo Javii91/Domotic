@@ -12,6 +12,7 @@ import cairo
 import jderobot
 import numpy
 import Image
+import Temp
 import time, datetime
 from datetime import datetime
 
@@ -23,13 +24,14 @@ class viewGUI:
   Modus = []
   x10 = ["", ""]
   Camera = ["",""]
+  Temperature = ["",""]
   CameraRun = False
   motion = False
   record_rdy1 = False
   record_rdy2 = False
   record = False
 
-  def __init__(self, propsx10 = None, propscam= None):
+  def __init__(self, propsx10 = None, propscam= None, propstmp= None):
     self.builder = Gtk.Builder()
     self.builder.add_from_file("security.glade")
     self.builder.connect_signals(self)
@@ -56,6 +58,10 @@ class viewGUI:
       self.checkCamera(propscam)
       
     self.cameratab()
+    
+    if propstmp:
+      self.checkTempcfg(propstmp)
+      
     self.load_other()
     
     if propsx10:
@@ -128,13 +134,20 @@ class viewGUI:
       f.write("cam.Proxy=CameraA:default -h "+self.Camera[0]+" -p " + self.Camera[1] +"\n")
     f.close()
 
+
   def load_environment (self):
     self.vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    self.vboxenv = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     
     image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
-    self.envopt = Gtk.Button(label=" Properties", image=image)
+    self.envopt = Gtk.Button(label=" x10 Properties", image=image)
     self.envopt.connect("clicked", self.cameracfg, "env")
+    image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+    self.tmpopt = Gtk.Button(label=" Tmp Properties", image=image)
+    self.tmpopt.connect("clicked", self.cameracfg, "tmp")
+    self.vbox2.pack_start(self.tmpopt, True, False, 0)
     self.vbox2.pack_start(self.envopt, True, False, 0)
+    self.vbox2.pack_start(self.vboxenv, True, False, 0)
     
   def on_camrun (self):
     if self.CameraRun == False:
@@ -242,6 +255,9 @@ class viewGUI:
     elif tab == "env":
       self.builder.get_object("entry4").set_text(self.x10[0])
       self.builder.get_object("entry5").set_text(self.x10[1])
+    elif tab == "tmp" or tab == "tmp2":
+      self.builder.get_object("entry4").set_text(self.Temperature[0])
+      self.builder.get_object("entry5").set_text(self.Temperature[1])
     self.lastsignal0 = self.builder.get_object("button11").connect("clicked", self.on_button11_clicked, tab)
     self.window6.show_all()
 
@@ -667,6 +683,30 @@ class viewGUI:
         self.on_camrun()
         self.radbut3.set_active(True)
         threading.Thread(target=self.camera).start()
+    elif tab == "tmp" or tab == "tmp2":
+      self.window6.hide()
+      self.Temperature[0] = self.builder.get_object("entry4").get_text()
+      self.Temperature[1] = self.builder.get_object("entry5").get_text()
+      try:
+        basetmp = ic.stringToProxy('Temperature:default -h '+self.Temperature[0]+' -p ' + self.Temperature[1])
+        self.tmp = Temp.TemperaturePrx.checkedCast(basetmp)
+      except:
+        print "Temperature: Connection Failed"
+        print self.Temperature[0], self.Temperature[1], 'Temperature:default -h '+self.Temperature[0]+' -p ' + self.Temperature[1]
+        #ic.destroy()
+        return
+      self.tmpopt.destroy()
+      self.tmpShow = Gtk.Label()
+      if tab == "tmp":
+        self.vboxenv.pack_end(self.tmpShow, True, False, 0)
+        self.vboxenv.show_all()
+      else:
+        self.maingrid.attach(self.tmpShow, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+        self.maingrid.show_all()
+      threading.Thread(target=self.checkTemperature).start()
+      # continuar
+        
+
     elif tab == "env":
       self.window6.hide()
       self.x10[0] = self.builder.get_object("entry4").get_text()
@@ -677,13 +717,14 @@ class viewGUI:
         base = ic.stringToProxy('Net:default -h '+self.x10[0]+' -p ' + self.x10[1])
         self.net = x10.NetPrx.checkedCast(base)
       except:
-        print "Connection Failed"
+        print "X10: Connection Failed"
         #ic.destroy()
         return
         
       self.envopt.destroy()
       self.environment()
-      self.vbox2.pack_start(self.maingrid, True, False, 0)
+      self.vboxenv.pack_start(self.maingrid, True, False, 0)
+      self.vboxenv.show_all()
       
       #threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
@@ -703,8 +744,20 @@ class viewGUI:
     self.addrule.disconnect(self.lastsignal4)
     self.table2.destroy()
     
+  def checkTemperature (self):
+    while True:
+      if threads == False:
+        break
+      t = self.tmp.getTemperature()
+      Gdk.threads_enter()
+      self.tmpShow.set_markup("Temperature: " + "<b>" + "{0:.2f}".format(t) + "</b>")
+      Gdk.threads_leave()
+      time.sleep(1)
+      
+    
+    
   def environment(self):
-    self.maingrid = Gtk.Table(2, 1, False)  
+    self.maingrid = Gtk.Table(3, 1, False)  
     
     self.modtable()
     
@@ -712,6 +765,10 @@ class viewGUI:
     add_button = Gtk.Button(label="Add Module", image=image)
     add_button.connect("clicked", self.on_addModule)
     self.maingrid.attach(add_button, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+    self.tmpopt = Gtk.Button(label=" Tmp Properties", image=image)
+    self.tmpopt.connect("clicked", self.cameracfg, "tmp2")
+    self.maingrid.attach(self.tmpopt, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
     
     
   def modtable (self):
@@ -920,6 +977,10 @@ class viewGUI:
     self.Camera[0] = props["cam.Proxy"].split("CameraA:default -h ")[1].split(" -p")[0]
     self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
     
+  def checkTempcfg (self, props):
+    self.Temperature[0] = props["cam.Proxy"].split("Temperature:default -h ")[1].split(" -p")[0]
+    self.Temperature[1] = props["cam.Proxy"].split(" -p")[1]
+    
   def checkModules(self, props):
     def str_to_bool(s):
       if s == 'True':
@@ -974,7 +1035,8 @@ if __name__ == "__main__":
   if (sys.argv):
     propsx10 = ic.getProperties().getPropertiesForPrefix("x10")
     propscam = ic.getProperties().getPropertiesForPrefix("cam")
-    GUI = viewGUI(propsx10, propscam)
+    propstmp = ic.getProperties().getPropertiesForPrefix("tmp")
+    GUI = viewGUI(propsx10, propscam, propstmp)
   else:
     GUI = viewGUI()
     
