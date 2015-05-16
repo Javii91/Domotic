@@ -8,6 +8,7 @@ class Mod:
   alarm_act = False
   alarm_start = "00:00"
   alarm_end = "23:55"
+  mail_alert = False
   rules = list()
   
   def __init__(self, name, code, mtype, active=True):

@@ -15,8 +15,12 @@ import Image
 import Temp
 import time, datetime
 import smtplib
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import os
+import cStringIO
 
 
 
@@ -33,6 +37,7 @@ class viewGUI:
   record_rdy2 = False
   record = False
   temprun = False
+
 
   def __init__(self, propsx10 = None, propscam= None, propstmp= None):
     self.builder = Gtk.Builder()
@@ -95,28 +100,27 @@ class viewGUI:
     self.window.show_all()
     self.on_camrun()
     
-  def send_mail(self): #sensor, image=None):
+  def send_mail(self, sensor, imagen=None):
+    
+    msg = MIMEMultipart()
+    msg['Subject'] = 'Security Alarm System'
+    msg['From'] = 'Security@AlarmSystem.com'
+    msg['To'] = self.mailother.get_text()
 
-    FROM = "Security@AlarmSystem.com"
-    TO = self.mailother.get_text().split(",") # must be a list
+    text = MIMEText("Alert Information \n Sensor: " + sensor + "\n Time: " + str(datetime.now()))
+    msg.attach(text)
+    if imagen != None:
+      imagen.add_header('Content-ID', '<image1>')
+      msg.attach(imagen)
 
-    SUBJECT = "Security Alarm System"
-
-    TEXT = "This is a test message"
-
-    # Prepare actual message
-
-    message = """\From: %s\nTo: %s\nSubject: %s\n
-
-    %s
-    """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
-
-    # Send the mail
-
-    server = smtplib.SMTP("smtpcorp.com",2525)
-    server.login("SecurityAlarm", "prueba")
-    server.sendmail(FROM, TO, message)
-    server.quit()
+    s = smtplib.SMTP("smtpcorp.com", 2525)
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login("javiolo91@hotmail.com", "prueba")
+    s.sendmail(msg['From'], msg['To'].split(","), msg.as_string())
+    print "enviado"
+    s.quit()
     
   def load_other(self):
     self.vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -139,12 +143,19 @@ class viewGUI:
     self.vbox3.pack_start(self.hbox3, False, False, 0)
     mailtip = Gtk.Label()
     mailtip.set_markup("<small>Separate mails using ','</small>")
-    self.vbox3.pack_start(mailtip, True, False, 0)
+    self.vbox3.pack_start(mailtip, False, False, 0)
     
     self.mailother = Gtk.Entry()
     self.mailother.set_text("javiolo91@hotmail.com")
     self.hbox3.pack_start(Gtk.Label("E-mail: "), True, False, 0)
     self.hbox3.pack_start(self.mailother, True, False, 0)
+    
+    self.hbox4 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+    self.vbox3.pack_start(self.hbox4, False, False, 0)
+    self.mailtime = Gtk.Entry()
+    self.mailtime.set_text("300")
+    self.hbox4.pack_start(Gtk.Label("E-Mail interval (s): "), True, False, 0)
+    self.hbox4.pack_start(self.mailtime, True, False, 0)
     
   def save_config (self, button, name):
     f = open (name, "w")
@@ -159,6 +170,7 @@ class viewGUI:
         f.write("x10.Module."+i.code+".alarm_act="+  str(i.alarm_act) +"\n")
         f.write("x10.Module."+i.code+".alarm_start="+  i.alarm_start +"\n")
         f.write("x10.Module."+i.code+".alarm_end="+  i.alarm_end +"\n")
+        f.write("x10.Module."+i.code+".mail_alert="+  i.mail_alert +"\n")
         a = 0
         first = True
         for n in i.rules:
@@ -236,15 +248,17 @@ class viewGUI:
     
     
     self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    self.motiontable = Gtk.Table(4, 2, True)
+    self.motiontable = Gtk.Table(5, 2, True)
     self.motiontable.attach(Gtk.Label(""), 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable.attach(Gtk.Label(""), 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable.attach(Gtk.Label("Objects in motion:"), 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     self.campeoplecounter = Gtk.Label("0")
     self.motiontable.attach(self.campeoplecounter, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.checkbut = Gtk.CheckButton(label="Send Alert when motion")#
+    self.motiontable.attach(self.checkbut, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)#
     self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when motion of")
-    self.motiontable.attach(self.radbut1, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
-    self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.radbut1, 0, 1, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
     self.vbox.pack_start(self.motiontable, True, True, 0)
     
     
@@ -312,6 +326,8 @@ class viewGUI:
       img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
       pix = numpy.array(img)
       return pix
+    
+    t_start_pic = time.time()
   
     try:
       #ic2 = Ice.initialize()    
@@ -396,7 +412,22 @@ class viewGUI:
           points.append(pt1)
           points.append(pt2)
           cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
-      
+          
+        Gdk.threads_enter()
+        if self.checkbut.get_active() and n > 0:
+          if time.time() - t_start_pic > int(self.mailtime.get_text()):
+            t_start_pic = time.time()
+            ima = Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', "RGB")
+            outbuf = cStringIO.StringIO()
+            ima.save(outbuf, format="PNG")
+            my_mime_image = MIMEImage(outbuf.getvalue(), name="Capture_"+str(datetime.now()))
+            self.send_mail("Camera", my_mime_image)
+        Gdk.threads_leave()
+
+    
+        
+          
+
         if self.record_rdy1 and n > 0:
           self.record = True
           first_zero = True
@@ -404,6 +435,7 @@ class viewGUI:
         if first_rec == True and self.record == True:
           out = cv2.VideoWriter(datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
           first_rec = False
+          
         
         
           
@@ -640,12 +672,15 @@ class viewGUI:
     self.box5 = self.builder.get_object("box5")
     self.lastsignal = self.change.connect("clicked", self.on_button5_clicked, mod)
     self.senalarm = self.builder.get_object("switch1")
+    self.senalarm.set_active(mod.mail_alert)
+    self.alertsignal = self.senalarm.connect("button-press-event", self.on_actAlert, mod)
     self.addrule = self.builder.get_object("button3")
     self.lastsignal4 = self.addrule.connect("clicked", self.changerule, mod)
     self.rultable(mod)
     
     
-
+  def on_actAlert(self, button, mod):
+    mod.mail_alert = self.senalarm.get_active()
 
 
 
@@ -697,6 +732,7 @@ class viewGUI:
     self.window3.hide()
     self.change.disconnect(self.lastsignal)
     self.addrule.disconnect(self.lastsignal4)
+    self.senalarm.disconnect(self.alertsignal)
     self.table2.destroy()
     return True
 
@@ -786,6 +822,7 @@ class viewGUI:
     self.window3.hide()
     self.change.disconnect(self.lastsignal)
     self.addrule.disconnect(self.lastsignal4)
+    self.senalarm.disconnect(self.alertsignal)
     self.table2.destroy()
     
   def checkTemperature (self):
@@ -1005,6 +1042,8 @@ class viewGUI:
         if i.code == n.code:
           if i.isSensor() and i.active != n.active:
             self.doRules(n.name, i.active)
+            if i.mail_alert and i.active:
+              self.send_mail(i.name)
             if self.record_rdy2 and self.combomotion.get_active_text() == "("+n.code+") "+n.name:
               if i.active:
                 self.record = True
@@ -1056,7 +1095,7 @@ class viewGUI:
           mod = Mod(props["x10.Module.A" + str(i) + ".name"], "A" + str(i) , props["x10.Module.A" + str(i) + ".type"], str_to_bool(props["x10.Module.A" + str(i) + ".active"]))
           mod.setcfgAlarm(int(props["x10.Module.A" + str(i) + ".alarm_start"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_start"][3:5]),
                             int(props["x10.Module.A" + str(i) + ".alarm_end"][0:2]),int(props["x10.Module.A" + str(i) + ".alarm_end"][3:5]), 
-                            str_to_bool(props["x10.Module.A" + str(i) + ".alarm_act"]))        
+                            str_to_bool(props["x10.Module.A" + str(i) + ".alarm_act"]))       
           self.Modus.append(mod)
           self.net.addModule(mod.name, mod.code, mod.mtype)
         else:
@@ -1064,6 +1103,7 @@ class viewGUI:
           if "x10.Module.A" + str(i) + ".rules" in props:
             for m in range(0,int(props["x10.Module.A" + str(i) + ".rules"])):
               mod.setRules(props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[0],props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[1],props["x10.Module.A" + str(i) + ".rules."+str(m)].split("|")[2])
+          mod.mail_alert = str_to_bool(props["x10.Module.A" + str(i) + ".mail_alert"])
           self.Modus.append(mod)
           self.net.addModule(mod.name, mod.code, mod.mtype)
 
