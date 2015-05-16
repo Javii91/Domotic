@@ -14,7 +14,9 @@ import numpy
 import Image
 import Temp
 import time, datetime
+import smtplib
 from datetime import datetime
+import os
 
 
 
@@ -89,9 +91,32 @@ class viewGUI:
     #threading.Thread(target=self.askdformods).start()
     #threading.Thread(target=self.checkAlarm).start()
     
-    
+    #self.send_mail() #continuar por aqui
     self.window.show_all()
     self.on_camrun()
+    
+  def send_mail(self): #sensor, image=None):
+
+    FROM = "Security@AlarmSystem.com"
+    TO = self.mailother.get_text().split(",") # must be a list
+
+    SUBJECT = "Security Alarm System"
+
+    TEXT = "This is a test message"
+
+    # Prepare actual message
+
+    message = """\From: %s\nTo: %s\nSubject: %s\n
+
+    %s
+    """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
+
+    # Send the mail
+
+    server = smtplib.SMTP("smtpcorp.com",2525)
+    server.login("SecurityAlarm", "prueba")
+    server.sendmail(FROM, TO, message)
+    server.quit()
     
   def load_other(self):
     self.vbox3 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -107,6 +132,19 @@ class viewGUI:
     self.otheropt.connect("clicked", self.save_config, self.fileother.get_text())
     self.hbox2.pack_start(self.fileother, True, False, 0)
     self.hbox2.pack_start(self.otheropt, True, False, 0)
+    
+    self.vbox3.pack_start(Gtk.Separator(), False, False, 5)
+    
+    self.hbox3 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+    self.vbox3.pack_start(self.hbox3, False, False, 0)
+    mailtip = Gtk.Label()
+    mailtip.set_markup("<small>Separate mails using ','</small>")
+    self.vbox3.pack_start(mailtip, True, False, 0)
+    
+    self.mailother = Gtk.Entry()
+    self.mailother.set_text("javiolo91@hotmail.com")
+    self.hbox3.pack_start(Gtk.Label("E-mail: "), True, False, 0)
+    self.hbox3.pack_start(self.mailother, True, False, 0)
     
   def save_config (self, button, name):
     f = open (name, "w")
@@ -1041,7 +1079,6 @@ if __name__ == "__main__":
   threads =True
   
   ic = Ice.initialize(sys.argv)
-  
   if (sys.argv):
     propsx10 = ic.getProperties().getPropertiesForPrefix("x10")
     propscam = ic.getProperties().getPropertiesForPrefix("cam")
