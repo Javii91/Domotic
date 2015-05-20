@@ -2,7 +2,9 @@ import sys, traceback, Ice
 import Temp
 import time
 import random
+import subprocess
 from threading import Thread
+from Colors import Colors
 
 class TemperatureI(Temp.Temperature):  
   def getTemperature(self, current=None):
@@ -15,19 +17,30 @@ if __name__ == "__main__":
   status = 0
   ic = None
   T = 26
+  txt = Colors()
   try:
     ic = Ice.initialize(sys.argv)
     adapter = ic.createObjectAdapterWithEndpoints("TemperatureAdapter", "default -p 10001")
     object = TemperatureI()
     adapter.add(object, ic.stringToIdentity("Temperature"))
     adapter.activate()
+
+    sys.stdout.write(txt.warning("Monitoring sensor...\t"))
+    sys.stdout.flush()
+    p = subprocess.Popen("sudo temper-poll", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    out = p.stdout.readline()
+    if out.find("Found 0 devices") == -1:
+      print txt.bold(txt.green("Running --> " + out ))
+    else:
+      print txt.bold(txt.fail("Failed --> " + out ))
+      sys.exit()
     while True:
-      T = T + random.random() - 0.5
-      time.sleep(3)
+      p = subprocess.Popen("sudo temper-poll -qc", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+      T = p.stdout.readline()
+      time.sleep(1)
     ic.waitForShutdown()
 
   except:
-    traceback.print_exc()
     status = 1
     
 
