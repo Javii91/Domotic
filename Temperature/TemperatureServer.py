@@ -50,7 +50,7 @@ if __name__ == "__main__":
     sys.exit()
   while True:
     p = subprocess.Popen("sudo pcsensor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    print p.stdout.readline()
+    p.stdout.readline()
     internal = p.stdout.readline()
     ipieces = internal.split(" ")
     T = float(ipieces[3][:-2])
