@@ -41,7 +41,16 @@ if not _M_Temp.__dict__.has_key('Temperature'):
             return '::Temp::Temperature'
         ice_staticId = staticmethod(ice_staticId)
 
-        def getTemperature(self, current=None):
+        def getTemperature1C(self, current=None):
+            pass
+
+        def getTemperature1F(self, current=None):
+            pass
+
+        def getTemperature2C(self, current=None):
+            pass
+
+        def getTemperature2F(self, current=None):
             pass
 
         def __str__(self):
@@ -52,14 +61,41 @@ if not _M_Temp.__dict__.has_key('Temperature'):
     _M_Temp.TemperaturePrx = Ice.createTempClass()
     class TemperaturePrx(Ice.ObjectPrx):
 
-        def getTemperature(self, _ctx=None):
-            return _M_Temp.Temperature._op_getTemperature.invoke(self, ((), _ctx))
+        def getTemperature1C(self, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature1C.invoke(self, ((), _ctx))
 
-        def begin_getTemperature(self, _response=None, _ex=None, _sent=None, _ctx=None):
-            return _M_Temp.Temperature._op_getTemperature.begin(self, ((), _response, _ex, _sent, _ctx))
+        def begin_getTemperature1C(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature1C.begin(self, ((), _response, _ex, _sent, _ctx))
 
-        def end_getTemperature(self, _r):
-            return _M_Temp.Temperature._op_getTemperature.end(self, _r)
+        def end_getTemperature1C(self, _r):
+            return _M_Temp.Temperature._op_getTemperature1C.end(self, _r)
+
+        def getTemperature1F(self, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature1F.invoke(self, ((), _ctx))
+
+        def begin_getTemperature1F(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature1F.begin(self, ((), _response, _ex, _sent, _ctx))
+
+        def end_getTemperature1F(self, _r):
+            return _M_Temp.Temperature._op_getTemperature1F.end(self, _r)
+
+        def getTemperature2C(self, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature2C.invoke(self, ((), _ctx))
+
+        def begin_getTemperature2C(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature2C.begin(self, ((), _response, _ex, _sent, _ctx))
+
+        def end_getTemperature2C(self, _r):
+            return _M_Temp.Temperature._op_getTemperature2C.end(self, _r)
+
+        def getTemperature2F(self, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature2F.invoke(self, ((), _ctx))
+
+        def begin_getTemperature2F(self, _response=None, _ex=None, _sent=None, _ctx=None):
+            return _M_Temp.Temperature._op_getTemperature2F.begin(self, ((), _response, _ex, _sent, _ctx))
+
+        def end_getTemperature2F(self, _r):
+            return _M_Temp.Temperature._op_getTemperature2F.end(self, _r)
 
         def checkedCast(proxy, facetOrCtx=None, _ctx=None):
             return _M_Temp.TemperaturePrx.ice_checkedCast(proxy, '::Temp::Temperature', facetOrCtx, _ctx)
@@ -74,7 +110,10 @@ if not _M_Temp.__dict__.has_key('Temperature'):
     _M_Temp._t_Temperature = IcePy.defineClass('::Temp::Temperature', Temperature, (), True, None, (), ())
     Temperature._ice_type = _M_Temp._t_Temperature
 
-    Temperature._op_getTemperature = IcePy.Operation('getTemperature', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_float, ())
+    Temperature._op_getTemperature1C = IcePy.Operation('getTemperature1C', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_float, ())
+    Temperature._op_getTemperature1F = IcePy.Operation('getTemperature1F', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_float, ())
+    Temperature._op_getTemperature2C = IcePy.Operation('getTemperature2C', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_float, ())
+    Temperature._op_getTemperature2F = IcePy.Operation('getTemperature2F', Ice.OperationMode.Normal, Ice.OperationMode.Normal, False, (), (), (), IcePy._t_float, ())
 
     _M_Temp.Temperature = Temperature
     del Temperature

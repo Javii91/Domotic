@@ -9,8 +9,14 @@ from threading import Thread
 from Colors import Colors
 
 class TemperatureI(Temp.Temperature):  
-  def getTemperature(self, current=None):
+  def getTemperature1C(self, current=None):
     return T
+  def getTemperature1F(self, current=None):
+    return TF
+  def getTemperature2C(self, current=None):
+    return T2
+  def getTemperature2F(self, current=None):
+    return TF2
     
     
 
@@ -18,7 +24,10 @@ class TemperatureI(Temp.Temperature):
 if __name__ == "__main__":
   status = 0
   ic = None
-  T = 26
+  T = 0
+  TF = 0
+  T2 = 0
+  TF2 = 0
   txt = Colors()
   try:
     ic = Ice.initialize(sys.argv)
@@ -32,16 +41,24 @@ if __name__ == "__main__":
 
   sys.stdout.write(txt.warning("Monitoring sensor...\t"))
   sys.stdout.flush()
-  p = subprocess.Popen("sudo temper-poll", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+  p = subprocess.Popen("sudo pcsensor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
   out = p.stdout.readline()
-  if out.find("Found 0 devices") == -1:
-    print txt.bold(txt.green("Running --> " + out ))
+  if out.find("Couldn't find the USB device, Exiting") == -1:
+    print txt.bold(txt.green("Running"))
   else:
     print txt.bold(txt.fail("Failed --> " + out ))
     sys.exit()
   while True:
-    p = subprocess.Popen("sudo temper-poll -qc", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-    T = p.stdout.readline()
+    p = subprocess.Popen("sudo pcsensor", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    print p.stdout.readline()
+    internal = p.stdout.readline()
+    ipieces = internal.split(" ")
+    T = float(ipieces[3][:-2])
+    TF = float(ipieces[2][:-2])
+    external = p.stdout.readline()
+    epieces = external.split(" ")
+    T2 = float(epieces[3][:-2])
+    TF2 = float(epieces[2][:-2])
     time.sleep(1)
   ic.waitForShutdown()
 

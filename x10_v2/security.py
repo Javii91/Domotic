@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from gi.repository import Gtk,GObject,Gdk,GLib,GdkPixbuf
 from Mod import Mod
 import sys, traceback, Ice
@@ -37,6 +39,9 @@ class viewGUI:
   record_rdy2 = False
   record = False
   temprun = False
+  temp_celsius = True
+  temp_rules = []
+  x10_on = False
 
 
   def __init__(self, propsx10 = None, propscam= None, propstmp= None):
@@ -100,6 +105,15 @@ class viewGUI:
     self.window.show_all()
     self.on_camrun()
     
+  def do_tmprule (self, tin, tout):
+    pass
+  
+  def del_tmprule (self, rule):
+    del self.temp_rules[rule]
+    
+  def add_tmprule (self, moreless, t, act, do):
+    self.temp_rules.append(moreless + "|" + "{0:.2f}".format(t) + "|" + act + "|" + do)
+    
   def send_mail(self, sensor, imagen=None):
     
     msg = MIMEMultipart()
@@ -119,7 +133,6 @@ class viewGUI:
     s.ehlo()
     s.login("javiolo91@hotmail.com", "prueba")
     s.sendmail(msg['From'], msg['To'].split(","), msg.as_string())
-    print "enviado"
     s.quit()
     
   def load_other(self):
@@ -590,7 +603,7 @@ class viewGUI:
 
 
   def on_button9_clicked (self, button, mod):
-    self.setRule(mod.name,self.builder.get_object("comboboxtext7").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext9").get_active_text())
+    self.setRule(mod.name,self.builder.get_object("comboboxtext11").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext12").get_active_text())
     self.builder.get_object("label13").set_label("")
     self.window5.hide()
     self.change3.disconnect(self.lastsignal3)
@@ -606,14 +619,14 @@ class viewGUI:
 
   def changerule (self, button, mod):
     self.window5 = self.builder.get_object("dialog4")
-    self.builder.get_object("label13").set_label(mod.name)
+    self.builder.get_object("label21").set_label(mod.name)
     self.window5.connect("delete_event", self.on_button8_clicked)
     self.window5.show_all()
     self.change3 = self.builder.get_object("button9")
     self.lastsignal3 = self.change3.connect("clicked", self.on_button9_clicked, mod)
-    self.combotextmodus = self.builder.get_object("comboboxtext8")
-    self.builder.get_object("comboboxtext7").set_active(0)
-    self.builder.get_object("comboboxtext9").set_active(0)
+    self.combotextmodus = self.builder.get_object("comboboxtext10")
+    self.builder.get_object("comboboxtext11").set_active(0)
+    self.builder.get_object("comboboxtext12").set_active(0)
     rdymods = self.parsemymods()
     self.combotextmodus.remove_all()
     for i in rdymods:
@@ -778,10 +791,19 @@ class viewGUI:
       self.tmpopt.destroy()
       self.tmpShow = Gtk.Label()
       if tab == "tmp":
+        
+        image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+        self.tmpcfg = Gtk.Button(label=" Temp Properties", image=image)
+        self.tmpcfg.connect("clicked", self.temperaturecfg)
+        self.vboxenv.pack_end(self.tmpcfg, True, False, 0)
         self.vboxenv.pack_end(self.tmpShow, True, False, 0)
         self.vboxenv.show_all()
       else:
         self.maingrid.attach(self.tmpShow, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+        image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+        self.tmpcfg = Gtk.Button(label=" Temp Properties", image=image)
+        self.tmpcfg.connect("clicked", self.temperaturecfg)
+        self.maingrid.attach(self.tmpcfg, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
         self.maingrid.show_all()
       threading.Thread(target=self.checkTemperature).start()
       # continuar
@@ -802,6 +824,7 @@ class viewGUI:
         return
         
       self.envopt.destroy()
+      self.x10_on = True
       self.environment()
       self.vboxenv.pack_start(self.maingrid, True, False, 0)
       self.vboxenv.show_all()
@@ -809,8 +832,120 @@ class viewGUI:
       #threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
       self.maingrid.show_all()
-      
   
+  def temperaturecfg (self, button):
+    self.window7 = self.builder.get_object("dialog6")
+    self.window7.connect("delete_event", self.on_button12_clicked)
+    self.window7.show_all()
+    self.tmpchange = self.builder.get_object("button13")
+    self.lastsignaltmp = self.tmpchange.connect("clicked", self.on_button13_clicked)
+    self.box9 = self.builder.get_object("box9")
+    
+    self.celsius = self.builder.get_object("switch2")
+    self.celsius.set_active(self.temp_celsius)
+    self.tmpsignal = self.celsius.connect("button-press-event", self.on_actCelsius)
+    self.addrule_tmp = self.builder.get_object("button14")
+    if self.x10_on:
+      self.lastsignaltmp2 = self.addrule_tmp.connect("clicked", self.changerule_tmp)
+    self.rultable_tmp()
+    
+  def on_button12_clicked(self, button, event= None):
+    self.window7.hide()
+    self.tmpchange.disconnect(self.lastsignaltmp)
+    if self.x10_on:
+      self.addrule_tmp.disconnect(self.lastsignaltmp2)
+    self.celsius.disconnect(self.tmpsignal)
+    self.tabletmp.destroy()
+    return True
+  
+  def on_button13_clicked(self, button):
+    self.window7.hide()
+    self.tmpchange.disconnect(self.lastsignaltmp)
+    if self.x10_on:
+      self.addrule_tmp.disconnect(self.lastsignaltmp2)
+    self.celsius.disconnect(self.tmpsignal)
+    self.tabletmp.destroy()
+    
+  def on_actCelsius (self, button, event):
+    self.temp_celsius = not self.celsius.get_active()
+    
+  def on_button15_clicked (self, button, event):
+    self.window8.hide()
+    self.tabletmp.destroy()
+    self.changetmp3.disconnect(self.lastsignaltmp3)
+    return True
+  
+  def on_button16_clicked (self, button):
+    self.add_tmprule(self.builder.get_object("comboboxtext13").get_active_text(),self.builder.get_object("spinbutton1").get_value(), self.builder.get_object("comboboxtext8").get_active_text(),self.builder.get_object("comboboxtext9").get_active_text())
+    self.window8.hide()
+    self.changetmp3.disconnect(self.lastsignaltmp3)
+    self.tabletmp.destroy()
+    self.rultable_tmp()
+    return True
+    
+  def changerule_tmp (self, button):
+    self.window8 = self.builder.get_object("dialog7")
+    self.window8.connect("delete_event", self.on_button15_clicked)
+    self.window8.show_all()
+    self.changetmp3 = self.builder.get_object("button16")
+    self.lastsignaltmp3 = self.changetmp3.connect("clicked", self.on_button16_clicked)
+    
+    self.combotextmodus2 = self.builder.get_object("comboboxtext8")
+    self.builder.get_object("comboboxtext13").set_active(0)
+    self.builder.get_object("comboboxtext8").set_active(0)
+    self.builder.get_object("comboboxtext9").set_active(0)
+    rdymods = self.parsemymods()
+    self.combotextmodus2.remove_all()
+    for i in rdymods:
+      self.combotextmodus2.append_text(i)
+    self.combotextmodus2.set_active(0)
+    
+  def rultable_tmp (self):
+    rules = self.parseRules("|".join(self.temp_rules))
+
+    if len(rules) == 0:
+      self.tabletmp = Gtk.Table(2, 4, False)
+    else:
+      self.tabletmp = Gtk.Table(len(rules)/4, 4, False)
+    self.box9.pack_start(self.tabletmp, True, True, 0)
+    
+    optionsLabel = Gtk.Label()
+    optionsLabel.set_markup("<b>Del</b>")
+    self.tabletmp.attach(optionsLabel, 0, 1, 0, 1)
+    
+    codeLabel = Gtk.Label()
+    codeLabel.set_markup("<b>State</b>")
+    self.tabletmp.attach(codeLabel, 1, 2, 0, 1)
+    
+    nameLabel = Gtk.Label()
+    nameLabel.set_markup("<b>Module</b>")
+    self.tabletmp.attach(nameLabel, 2, 3, 0, 1)
+    
+    typeLabel = Gtk.Label()
+    typeLabel.set_markup("<b>Action</b>")
+    self.tabletmp.attach(typeLabel, 3, 4, 0, 1)
+    
+    
+    if len(rules) == 0:
+      self.window7.show_all()
+      return
+    
+    for i in range(len(rules)/4):
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_delrul_tmp, i) 
+      self.tabletmp.attach(deletebutton, 0, 1, 4*i+1, 4*i+2)
+      self.tabletmp.attach(Gtk.Label(rules[4*i] + " " + rules[4*i+1]), 1, 2, 4*i+1, 4*i+2)
+      self.tabletmp.attach(Gtk.Label(rules[4*i+2]), 2, 3, 4*i+1, 4*i+2)
+      self.tabletmp.attach(Gtk.Label(rules[4*i+3]), 3, 4, 4*i+1, 4*i+2)
+
+    self.window7.show_all()
+    
+  def on_delrul_tmp (self, button, rule):
+    self.del_tmprule(rule)
+    self.tabletmp.destroy()
+    self.rultable_tmp()
+    
     
   def on_button5_clicked(self, button, mod):
     name = self.builder.get_object("entry1").get_text()
@@ -829,10 +964,18 @@ class viewGUI:
     while True:
       if threads == False:
         break
-      t = self.tmp.getTemperature()
-      Gdk.threads_enter()
-      self.tmpShow.set_markup("Temperature: " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "C")
-      Gdk.threads_leave()
+      if self.temp_celsius:
+        t = self.tmp.getTemperature1C()
+        t2 = self.tmp.getTemperature2C()
+        Gdk.threads_enter()
+        self.tmpShow.set_markup("Temperature: int " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "C | ext " + "<b>" + "{0:.2f}".format(t2) + "</b> "+ u'\N{DEGREE SIGN}'+ "C")
+        Gdk.threads_leave()
+      else:
+        t = self.tmp.getTemperature1F()
+        t2 = self.tmp.getTemperature2F()
+        Gdk.threads_enter()
+        self.tmpShow.set_markup("Temperature: int " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "F | ext " + "<b>" + "{0:.2f}".format(t2) + "</b> "+ u'\N{DEGREE SIGN}'+ "F")
+        Gdk.threads_leave()
       time.sleep(1)
       
     
@@ -1085,7 +1228,7 @@ class viewGUI:
         self.Modus = self.assingmod(self.parseMod(self.net.getEnvironment()))
       except:
         print "x10: Connection Failed"
-        
+    self.x10_on = True
     for i in range(1,17):
       if "x10.Module.A" + str(i) + ".name" in props:
         if self.net.isCode("A"+str(i)):
