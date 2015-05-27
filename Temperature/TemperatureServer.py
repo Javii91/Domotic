@@ -9,8 +9,14 @@ from threading import Thread
 from Colors import Colors
 
 class TemperatureI(Temp.Temperature):  
+  def getTemperature(self, n, current=None):
+    if n == 1:
+      return T
+    elif n == 2:
+      return T2
+      
   def getTemperature1C(self, current=None):
-    return T
+    return T 
   def getTemperature1F(self, current=None):
     return TF
   def getTemperature2C(self, current=None):

@@ -106,7 +106,42 @@ class viewGUI:
     self.on_camrun()
     
   def do_tmprule (self, tin, tout):
-    pass
+    partes = self.parseRules("|".join(self.temp_rules))
+    for n in range(len(partes)/4):
+      if partes[4*n] == "T int <":
+        if tin < float(partes[4*n+1]):
+          if partes[4*n+3] == "Activate":
+            if not self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setActive(partes[4*n+2].split(" ")[1])
+          else: 
+            if self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setInactive(partes[4*n+2].split(" ")[1])
+      elif partes[4*n] == "T int >":
+        if tin > float(partes[4*n+1]): 
+          if partes[4*n+3] == "Activate":
+            if not self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setActive(partes[4*n+2].split(" ")[1])
+          else: 
+            if self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setInactive(partes[4*n+2].split(" ")[1])
+      elif partes[4*n] == "T ext <":
+        if tout < float(partes[4*n+1]):
+          if partes[4*n+3] == "Activate":
+            if not self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setActive(partes[4*n+2].split(" ")[1])
+          else: 
+            if self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setInactive(partes[4*n+2].split(" ")[1])
+      elif partes[4*n] == "T ext >":
+        if tout > float(partes[4*n+1]):
+          if partes[4*n+3] == "Activate":
+            if not self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setActive(partes[4*n+2].split(" ")[1])
+          else: 
+            if self.net.isActive(partes[4*n+2].split(" ")[1]):
+              self.net.setInactive(partes[4*n+2].split(" ")[1])
+          
+    
   
   def del_tmprule (self, rule):
     del self.temp_rules[rule]
@@ -200,6 +235,15 @@ class viewGUI:
     if self.Temperature[0] != "" and self.Temperature[1] != 0:
       f.write("# Temperature configuration \n")
       f.write("tmp.Proxy=Temperature:default -h "+self.Temperature[0]+" -p " + self.Temperature[1] +"\n")
+      f.write("tmp.use_Celsius=" + temp_celsius +"\n")
+      b=0
+      first = True
+      for y in self.temp_rules:
+        if first == True:
+            f.write("tmp.rules="+ str(len(self.temp_rules))+"\n")
+            first = False
+        f.write("tmp.rules."+ str(b) +"=" + y +"\n")
+        b+=1
       f.write("\n")
     f.close()
 
@@ -869,7 +913,7 @@ class viewGUI:
   def on_actCelsius (self, button, event):
     self.temp_celsius = not self.celsius.get_active()
     
-  def on_button15_clicked (self, button, event):
+  def on_button15_clicked (self, button, event=None):
     self.window8.hide()
     self.tabletmp.destroy()
     self.changetmp3.disconnect(self.lastsignaltmp3)
@@ -887,6 +931,9 @@ class viewGUI:
     self.window8 = self.builder.get_object("dialog7")
     self.window8.connect("delete_event", self.on_button15_clicked)
     self.window8.show_all()
+    adj = Gtk.Adjustment(1, 0, 99, 1, 1, 1)
+    spinBtn = self.builder.get_object("spinbutton1")
+    spinBtn.configure(adj, 1, 0)
     self.changetmp3 = self.builder.get_object("button16")
     self.lastsignaltmp3 = self.changetmp3.connect("clicked", self.on_button16_clicked)
     
@@ -965,17 +1012,19 @@ class viewGUI:
       if threads == False:
         break
       if self.temp_celsius:
-        t = self.tmp.getTemperature1C()
-        t2 = self.tmp.getTemperature2C()
+        t = self.tmp.getTemperature(1)
+        t2 = self.tmp.getTemperature(2)
         Gdk.threads_enter()
         self.tmpShow.set_markup("Temperature: int " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "C | ext " + "<b>" + "{0:.2f}".format(t2) + "</b> "+ u'\N{DEGREE SIGN}'+ "C")
         Gdk.threads_leave()
+        self.do_tmprule(t,t2)
       else:
-        t = self.tmp.getTemperature1F()
-        t2 = self.tmp.getTemperature2F()
+        t = self.tmp.getTemperature(1) * 1.8 +32
+        t2 = self.tmp.getTemperature(2) * 1.8 +32
         Gdk.threads_enter()
         self.tmpShow.set_markup("Temperature: int " + "<b>" + "{0:.2f}".format(t) + "</b> "+ u'\N{DEGREE SIGN}'+ "F | ext " + "<b>" + "{0:.2f}".format(t2) + "</b> "+ u'\N{DEGREE SIGN}'+ "F")
         Gdk.threads_leave()
+        self.do_tmprule(t,t2)
       time.sleep(1)
       
     
@@ -1208,8 +1257,22 @@ class viewGUI:
     self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
     
   def checkTempcfg (self, props):
+    def str_to_bool(s):
+      if s == 'True':
+         return True
+      else:
+         return False
+         
     self.Temperature[0] = props["tmp.Proxy"].split("Temperature:default -h ")[1].split(" -p")[0]
     self.Temperature[1] = props["tmp.Proxy"].split(" -p")[1]
+    self.temp_celsius = str_to_bool(props["tmp.use_Celsius"])
+    if "tmp.rules" in props:
+      for m in range(0,int(props["tmp.rules"])):
+        self.add_tmprule(props["tmp.rules."+str(m)].split("|")[0],float(props["tmp.rules."+str(m)].split("|")[1]),props["tmp.rules."+str(m)].split("|")[2],props["tmp.rules."+str(m)].split("|")[3])
+
+    
+
+    
     
   def checkModules(self, props):
     def str_to_bool(s):
