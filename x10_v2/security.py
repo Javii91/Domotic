@@ -422,6 +422,17 @@ class viewGUI:
         
         
   def play_kinectDepth (self):
+    def RGB_to_depth (data, rgbObgr):
+      img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
+      pix = numpy.array(img)
+      red = pix[:,:,2]
+      green = pix[:,:,1]
+      blue = pix[:,:,0]
+      img = numpy.zeros((red.shape[0], red.shape[1], 3), dtype = red.dtype) 
+      for n in range(3):
+        img[:,:,n] = red
+      return img
+      
     try:
       obj2 = ic.stringToProxy('cameraDepth:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
       kin = jderobot.CameraPrx.checkedCast(obj2)
@@ -435,7 +446,7 @@ class viewGUI:
         break
       
       data = kin.getImageData(kin.getImageFormat()[0])
-      pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
       Gdk.threads_enter()
       self.kinectDepth.set_from_pixbuf(pixbuf)
       Gdk.threads_leave()
