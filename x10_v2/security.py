@@ -32,6 +32,8 @@ class viewGUI:
   Modus = []
   x10 = ["", ""]
   Camera = ["",""]
+  Kinect = ["localhost","9998"]
+  KinectRun = False
   Temperature = ["",""]
   CameraRun = False
   motion = False
@@ -71,6 +73,8 @@ class viewGUI:
       self.checkCamera(propscam)
       
     self.cameratab()
+
+    self.kinecttab()
     
     if propstmp:
       self.checkTempcfg(propstmp)
@@ -96,6 +100,7 @@ class viewGUI:
     
 
     self.notebook.append_page(self.vbox, Gtk.Label("Camera"))
+    self.notebook.append_page(self.vboxkinect, Gtk.Label("Kinect"))
     self.notebook.append_page(self.vbox3, Gtk.Label("Other"))
     
     #threading.Thread(target=self.askdformods).start()
@@ -276,6 +281,21 @@ class viewGUI:
       self.labelmt.show()
       self.ad.show()
       self.radbut3.set_active(True)
+
+  def kinecttab (self):
+    self.vboxkinect = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    self.vboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
+    self.vboxkinect.pack_start(self.vboxkinectcams, True, False, 0)
+    self.kinectRGB=Gtk.Image()
+    self.kinectDepth=Gtk.Image()
+    self.vboxkinectcams.pack_start(self.kinectRGB, True, False, 0)
+    self.vboxkinectcams.pack_start(self.kinectDepth, True, False, 0)
+    
+
+    image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
+    self.kinectopt = Gtk.Button(label=" Properties", image=image)
+    self.kinectopt.connect("clicked", self.cameracfg, "kin")
+    self.vboxkinect.pack_start(self.kinectopt, True, False, 0)
     
   def cameratab (self):
     self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -367,6 +387,9 @@ class viewGUI:
     if tab == "cam":
       self.builder.get_object("entry4").set_text(self.Camera[0])
       self.builder.get_object("entry5").set_text(self.Camera[1])
+    elif tab == "kin":
+      self.builder.get_object("entry4").set_text(self.Kinect[0])
+      self.builder.get_object("entry5").set_text(self.Kinect[1])
     elif tab == "env":
       self.builder.get_object("entry4").set_text(self.x10[0])
       self.builder.get_object("entry5").set_text(self.x10[1])
@@ -375,8 +398,49 @@ class viewGUI:
       self.builder.get_object("entry5").set_text(self.Temperature[1])
     self.lastsignal0 = self.builder.get_object("button11").connect("clicked", self.on_button11_clicked, tab)
     self.window6.show_all()
+ 
 
+
+  def play_kinectRGB (self):  
+    try:
+      obj2 = ic.stringToProxy('cameraRGB:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
+      kin = jderobot.CameraPrx.checkedCast(obj2)
+    except:
+      print "KinectRGB: Connection Failed"
+      self.KinectRun = False
+      return
+
+    while True:
+      if threads == False or self.KinectRun == False:
+        break
+      data = kin.getImageData(kin.getImageFormat()[0])
+      pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      Gdk.threads_enter()
+      self.kinectRGB.set_from_pixbuf(pixbuf)
+      Gdk.threads_leave()
+        
+        
+        
+  def play_kinectDepth (self):
+    try:
+      obj2 = ic.stringToProxy('cameraDepth:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
+      kin = jderobot.CameraPrx.checkedCast(obj2)
+    except:
+      print "KinectDepth: Connection Failed"
+      self.KinectRun = False
+      return
     
+    while True:
+      if threads == False or self.KinectRun == False:
+        break
+      
+      data = kin.getImageData(kin.getImageFormat()[0])
+      pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      Gdk.threads_enter()
+      self.kinectDepth.set_from_pixbuf(pixbuf)
+      Gdk.threads_leave()
+        
+
     
   def camera (self):
     def data_to_image (data, rgbObgr):
@@ -803,6 +867,7 @@ class viewGUI:
     self.builder.get_object("button11").disconnect(self.lastsignal0)
     self.radbut3.set_active(True)
     self.CameraRun = False
+    self.KinectRun = False
     self.motion = False
     self.window6.hide()
     self.on_camrun()
@@ -820,6 +885,18 @@ class viewGUI:
         self.on_camrun()
         self.radbut3.set_active(True)
         threading.Thread(target=self.camera).start()
+    elif tab == "kin":
+      self.KinectRun = False
+      self.window6.hide()
+      self.Kinect[0] = self.builder.get_object("entry4").get_text()
+      self.Kinect[1] = self.builder.get_object("entry5").get_text()
+      if self.KinectRun == False:
+        self.KinectRun = True
+        #self.on_camrun()
+        #self.radbut3.set_active(True)
+        threading.Thread(target=self.play_kinectRGB).start()
+        threading.Thread(target=self.play_kinectDepth).start()
+
     elif tab == "tmp" or tab == "tmp2":
       self.window6.hide()
       self.Temperature[0] = self.builder.get_object("entry4").get_text()
