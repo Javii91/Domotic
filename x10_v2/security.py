@@ -32,7 +32,7 @@ class viewGUI:
   Modus = []
   x10 = ["", ""]
   Camera = ["",""]
-  Kinect = ["localhost","9998"]
+  Kinect = [["",""]]
   nKinect = 0
   KinectRun = False
   Temperature = ["",""]
@@ -48,7 +48,7 @@ class viewGUI:
   x10_on = False
 
 
-  def __init__(self, propsx10 = None, propscam= None, propstmp= None):
+  def __init__(self, propsx10 = None, propscam= None, propstmp= None, propskin= None):
     self.builder = Gtk.Builder()
     self.builder.add_from_file("security.glade")
     self.builder.connect_signals(self)
@@ -75,8 +75,13 @@ class viewGUI:
       self.checkCamera(propscam)
       
     self.cameratab()
-
+    
     self.kinecttab()
+    
+    if propskin:
+      self.checkKinect(propskin)
+
+    
     
     if propstmp:
       self.checkTempcfg(propstmp)
@@ -189,7 +194,7 @@ class viewGUI:
     self.fileother.set_text("security.cfg")
     image = Gtk.Image(stock=Gtk.STOCK_SAVE_AS)
     self.otheropt = Gtk.Button(label=" Save", image=image)
-    self.otheropt.connect("clicked", self.save_config, self.fileother.get_text())
+    self.otheropt.connect("clicked", self.save_config)
     self.hbox2.pack_start(self.fileother, True, False, 0)
     self.hbox2.pack_start(self.otheropt, True, False, 0)
     
@@ -213,8 +218,8 @@ class viewGUI:
     self.hbox4.pack_start(Gtk.Label("E-Mail interval (s): "), True, False, 0)
     self.hbox4.pack_start(self.mailtime, True, False, 0)
     
-  def save_config (self, button, name):
-    f = open (name, "w")
+  def save_config (self, button):
+    f = open (self.fileother.get_text(), "w")
     if self.x10[0] != "" and self.x10[1] != 0:
       f.write("# Environment configuration \n")
       f.write("x10.Proxy=Net:default -h "+self.x10[0]+" -p " + self.x10[1] +"\n")
@@ -252,6 +257,17 @@ class viewGUI:
             first = False
         f.write("tmp.rules."+ str(b) +"=" + y +"\n")
         b+=1
+      f.write("\n")
+      
+    if len(self.Kinect) > 1:
+      f.write("# Kinect configuration \n")
+      f.write("kin.sensors="+str(len(self.Kinect)-1)+"\n")
+      c = 0 
+      for n in self.Kinect:
+        if c != 0:
+          f.write("kin."+ str(c)+".Proxy=default -h "+n[0]+" -p " + n[1] +"\n")
+        c = c + 1
+        
       f.write("\n")
     f.close()
 
@@ -297,6 +313,8 @@ class viewGUI:
     else:
       self.labelmtkin.show()
       self.adkinect.show()
+      if self.motionKin == False:
+        self.motiontablekinect.hide()
       #self.radbut3.set_active(True)
 
   def kinecttab (self):
@@ -429,8 +447,8 @@ class viewGUI:
       self.builder.get_object("entry4").set_text(self.Camera[0])
       self.builder.get_object("entry5").set_text(self.Camera[1])
     elif tab == "kin":
-      self.builder.get_object("entry4").set_text(self.Kinect[0])
-      self.builder.get_object("entry5").set_text(self.Kinect[1])
+      self.builder.get_object("entry4").set_text(self.Kinect[0][0])
+      self.builder.get_object("entry5").set_text(self.Kinect[0][1])
     elif tab == "env":
       self.builder.get_object("entry4").set_text(self.x10[0])
       self.builder.get_object("entry5").set_text(self.x10[1])
@@ -444,12 +462,10 @@ class viewGUI:
 
   def play_kinectRGB (self, kinectRGB, hboxkinectcams):  
     try:
-      obj2 = ic.stringToProxy('cameraRGB:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
+      obj2 = ic.stringToProxy('cameraRGB:default -h '+self.Kinect[self.nKinect][0]+' -p ' + self.Kinect[self.nKinect][1])
       kin = jderobot.CameraPrx.checkedCast(obj2)
     except:
       print "KinectRGB: Connection Failed"
-      self.KinectRun = False
-      self.on_kinrun()
       return
 
     formatRGB = kin.getImageFormat()[0]
@@ -478,12 +494,12 @@ class viewGUI:
       return img
       
     try:
-      obj2 = ic.stringToProxy('cameraDepth:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
+      obj2 = ic.stringToProxy('cameraDepth:default -h '+self.Kinect[self.nKinect][0]+' -p ' + self.Kinect[self.nKinect][1])
       kin = jderobot.CameraPrx.checkedCast(obj2)
     except:
       print "KinectDepth: Connection Failed"
-      self.KinectRun = False
-      self.on_kinrun()
+      self.Kinect.pop()
+      self.on_del_kinect(None, hboxkinectcams)
       return
     
     formatDepth= kin.getImageFormat()[0]
@@ -996,10 +1012,10 @@ class viewGUI:
     
   def on_button10_clicked(self, button, event=None):
     self.builder.get_object("button11").disconnect(self.lastsignal0)
-    #self.radbut3.set_active(True)
-    #self.CameraRun = False
+    self.radbut3.set_active(True)
+    self.CameraRun = False
     #self.KinectRun = False
-    #self.motion = False
+    self.motion = False
     self.window6.hide()
     self.on_camrun()
     self.on_kinrun()
@@ -1027,8 +1043,9 @@ class viewGUI:
           
       self.KinectRun = False
       self.window6.hide()
-      self.Kinect[0] = self.builder.get_object("entry4").get_text()
-      self.Kinect[1] = self.builder.get_object("entry5").get_text()
+      host = self.builder.get_object("entry4").get_text()
+      port = self.builder.get_object("entry5").get_text()
+      self.Kinect.append([host,port])
       
       
       hboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
@@ -1490,6 +1507,40 @@ class viewGUI:
     self.Camera[0] = props["cam.Proxy"].split("CameraA:default -h ")[1].split(" -p")[0]
     self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
     
+  def checkKinect (self, props):
+    
+    nsensores = props["kin.sensors"]
+    for n in range(1,int(nsensores)+1):
+      host = props["kin."+str(n)+".Proxy"].split("default -h ")[1].split(" -p")[0]
+      port = props["kin."+str(n)+".Proxy"].split(" -p")[1]
+      self.Kinect.append([host,port])
+      
+      self.KinectRun = False
+      
+      
+      hboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
+      self.vboxkinectcams.pack_start(hboxkinectcams, True, False, 0)
+      kinectRGB=Gtk.Image()
+      kinectDepth=Gtk.Image()
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams)
+      hboxkinectcams.pack_start(deletebutton, True, False, 0)
+      hboxkinectcams.pack_start(kinectRGB, True, False, 0)
+      hboxkinectcams.pack_start(kinectDepth, True, False, 0)
+      hboxkinectcams.show_all()
+      
+      if self.KinectRun == False:
+        self.KinectRun = True
+        self.nKinect += 1
+        self.on_kinrun()
+        #self.radbut3.set_active(True)
+        threading.Thread(target=self.play_kinectRGB, args=[kinectRGB,hboxkinectcams]).start()
+        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams]).start()
+      
+      
+     
+    
   def checkTempcfg (self, props):
     def str_to_bool(s):
       if s == 'True':
@@ -1563,7 +1614,8 @@ if __name__ == "__main__":
     propsx10 = ic.getProperties().getPropertiesForPrefix("x10")
     propscam = ic.getProperties().getPropertiesForPrefix("cam")
     propstmp = ic.getProperties().getPropertiesForPrefix("tmp")
-    GUI = viewGUI(propsx10, propscam, propstmp)
+    propskin = ic.getProperties().getPropertiesForPrefix("kin")
+    GUI = viewGUI(propsx10, propscam, propstmp, propskin)
   else:
     GUI = viewGUI()
     
