@@ -221,7 +221,7 @@ class viewGUI:
   def save_config (self, button):
     f = open (self.fileother.get_text(), "w")
     if self.x10[0] != "" and self.x10[1] != 0:
-      f.write("# Environment configuration \n")
+      f.write("# X10 Environment configuration \n")
       f.write("x10.Proxy=Net:default -h "+self.x10[0]+" -p " + self.x10[1] +"\n")
       f.write("\n")
       for i in self.Modus:
@@ -302,7 +302,7 @@ class viewGUI:
       self.radbut3.set_active(True)
       
   def on_kinrun (self):
-    if self.KinectRun == False or self.nKinect == 0:
+    if self.KinectRun == False or self.nKinect == 0:a
       self.motiontablekinect.hide()
       #self.motiontable2.hide() 
       self.labelmtkin.hide()
