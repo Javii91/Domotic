@@ -70,6 +70,7 @@ class viewGUI:
       
     self.notebook = Gtk.Notebook()
     self.window.add(self.notebook)
+    self.load_other()
     
     if propscam:
       self.checkCamera(propscam)
@@ -86,7 +87,7 @@ class viewGUI:
     if propstmp:
       self.checkTempcfg(propstmp)
       
-    self.load_other()
+    
     
     if propsx10:
       self.checkModules(propsx10)
@@ -218,6 +219,17 @@ class viewGUI:
     self.hbox4.pack_start(Gtk.Label("E-Mail interval (s): "), True, False, 0)
     self.hbox4.pack_start(self.mailtime, True, False, 0)
     
+    self.hbox5 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+    self.vbox3.pack_start(self.hbox5, False, False, 0)
+    self.resolution = Gtk.ComboBoxText()
+    self.resolution.remove_all()
+    self.resolution.append_text("160x120")
+    self.resolution.append_text("320x240")
+    self.resolution.append_text("640x480")
+    self.resolution.set_active(1)
+    self.hbox5.pack_start(Gtk.Label("Image Resolution: "), True, False, 0)
+    self.hbox5.pack_start(self.resolution, True, False, 0)
+    
   def save_config (self, button):
     f = open (self.fileother.get_text(), "w")
     if self.x10[0] != "" and self.x10[1] != 0:
@@ -302,7 +314,7 @@ class viewGUI:
       self.radbut3.set_active(True)
       
   def on_kinrun (self):
-    if self.KinectRun == False or self.nKinect == 0:a
+    if self.KinectRun == False or self.nKinect == 0:
       self.motiontablekinect.hide()
       #self.motiontable2.hide() 
       self.labelmtkin.hide()
@@ -461,6 +473,28 @@ class viewGUI:
 
 
   def play_kinectRGB (self, kinectRGB, hboxkinectcams):  
+    def resolution (n = None):
+      if self.resolution.get_active_text() == "160x120":
+        if n == None:
+          return (160,120)
+        elif n == 0:
+          return 160
+        else:
+          return 120
+      elif self.resolution.get_active_text() == "320x240":
+        if n == None:
+          return (320,240)
+        elif n == 0:
+          return 320
+        else:
+          return 240
+      else: 
+        if n == None:
+          return (640,480)
+        elif n == 0:
+          return 640
+        else:
+          return 480
     try:
       obj2 = ic.stringToProxy('cameraRGB:default -h '+self.Kinect[self.nKinect][0]+' -p ' + self.Kinect[self.nKinect][1])
       kin = jderobot.CameraPrx.checkedCast(obj2)
@@ -474,6 +508,7 @@ class viewGUI:
         break
       data = kin.getImageData(formatRGB)
       pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.HYPER);
       Gdk.threads_enter()
       kinectRGB.clear()
       kinectRGB.set_from_pixbuf(pixbuf)
@@ -482,6 +517,28 @@ class viewGUI:
         
         
   def play_kinectDepth (self, kinectDepth,hboxkinectcams):
+    def resolution (n = None):
+      if self.resolution.get_active_text() == "160x120":
+        if n == None:
+          return (160,120)
+        elif n == 0:
+          return 160
+        else:
+          return 120
+      elif self.resolution.get_active_text() == "320x240":
+        if n == None:
+          return (320,240)
+        elif n == 0:
+          return 320
+        else:
+          return 240
+      else: 
+        if n == None:
+          return (640,480)
+        elif n == 0:
+          return 640
+        else:
+          return 480
     def RGB_to_depth (data, rgbObgr):
       img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
       pix = numpy.array(img)
@@ -570,8 +627,8 @@ class viewGUI:
           points.append(pt2)
           cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
           
-         
-        pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        color_image = cv2.resize(numpy.array(color_image), resolution())
+        pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(color_image).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, resolution(0),resolution(1), resolution(0)*3,None, None)
         Gdk.threads_enter()
         self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())+n-ult_suma)+"</b>")
         ult_suma = n
@@ -582,6 +639,7 @@ class viewGUI:
       else:
         datos = Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw')
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(datos, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.HYPER);
         Gdk.threads_enter()
         kinectDepth.clear()
         kinectDepth.set_from_pixbuf(pixbuf)
