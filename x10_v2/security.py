@@ -33,6 +33,7 @@ class viewGUI:
   x10 = ["", ""]
   Camera = ["",""]
   Kinect = ["localhost","9998"]
+  nKinect = 0
   KinectRun = False
   Temperature = ["",""]
   CameraRun = False
@@ -285,7 +286,7 @@ class viewGUI:
       self.radbut3.set_active(True)
       
   def on_kinrun (self):
-    if self.KinectRun == False:
+    if self.KinectRun == False or self.nKinect == 0:
       self.motiontablekinect.hide()
       #self.motiontable2.hide() 
       self.labelmtkin.hide()
@@ -300,16 +301,11 @@ class viewGUI:
 
   def kinecttab (self):
     self.vboxkinect = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    self.vboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
+    self.vboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
     self.vboxkinect.pack_start(self.vboxkinectcams, True, False, 0)
-    self.kinectRGB=Gtk.Image()
-    self.kinectDepth=Gtk.Image()
-    self.vboxkinectcams.pack_start(self.kinectRGB, True, False, 0)
-    self.vboxkinectcams.pack_start(self.kinectDepth, True, False, 0)
-    
 
     image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
-    self.kinectopt = Gtk.Button(label=" Properties", image=image)
+    self.kinectopt = Gtk.Button(label=" Add Kinect Sensor", image=image)
     self.kinectopt.connect("clicked", self.cameracfg, "kin")
     self.vboxkinect.pack_start(self.kinectopt, True, False, 0)
     
@@ -446,7 +442,7 @@ class viewGUI:
  
 
 
-  def play_kinectRGB (self):  
+  def play_kinectRGB (self, kinectRGB, hboxkinectcams):  
     try:
       obj2 = ic.stringToProxy('cameraRGB:default -h '+self.Kinect[0]+' -p ' + self.Kinect[1])
       kin = jderobot.CameraPrx.checkedCast(obj2)
@@ -458,18 +454,18 @@ class viewGUI:
 
     formatRGB = kin.getImageFormat()[0]
     while True:
-      if threads == False or self.KinectRun == False:
+      if threads == False or self.KinectRun == False or not hboxkinectcams in self.vboxkinectcams:
         break
       data = kin.getImageData(formatRGB)
       pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
       Gdk.threads_enter()
-      self.kinectRGB.clear()
-      self.kinectRGB.set_from_pixbuf(pixbuf)
+      kinectRGB.clear()
+      kinectRGB.set_from_pixbuf(pixbuf)
       Gdk.threads_leave()
         
         
         
-  def play_kinectDepth (self):
+  def play_kinectDepth (self, kinectDepth,hboxkinectcams):
     def RGB_to_depth (data, rgbObgr):
       img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
       pix = numpy.array(img)
@@ -489,16 +485,23 @@ class viewGUI:
       self.KinectRun = False
       self.on_kinrun()
       return
+    
+    formatDepth= kin.getImageFormat()[0]
+    data = kin.getImageData(formatDepth)
       
-    frame_size = (640,480)
+    frame_size = (data.description.width,data.description.height)
     color_image = cv.CreateImage(frame_size, 8, 3)
     grey_image = cv.CreateImage(frame_size, cv.IPL_DEPTH_8U, 1)
     moving_average = cv.CreateImage(frame_size, cv.IPL_DEPTH_32F, 3)
       
-    formatDepth= kin.getImageFormat()[0]
+    ult_suma = 0
     first = True
     while True:
-      if threads == False or self.KinectRun == False:
+      if threads == False or self.KinectRun == False or not hboxkinectcams in self.vboxkinectcams:
+        if self.motionKin == True:
+          Gdk.threads_enter()
+          self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())-ult_suma)+"</b>")
+          Gdk.threads_leave()
         break
         
       data = kin.getImageData(formatDepth)
@@ -554,17 +557,18 @@ class viewGUI:
          
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
         Gdk.threads_enter()
-        self.kinpeoplecounter.set_markup("<b>"+str(n)+"</b>")
-        self.kinectDepth.clear()
-        self.kinectDepth.set_from_pixbuf(pixbuf)
+        self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())+n-ult_suma)+"</b>")
+        ult_suma = n
+        kinectDepth.clear()
+        kinectDepth.set_from_pixbuf(pixbuf)
         Gdk.threads_leave()
           
       else:
         datos = Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw')
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(datos, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
         Gdk.threads_enter()
-        self.kinectDepth.clear()
-        self.kinectDepth.set_from_pixbuf(pixbuf)
+        kinectDepth.clear()
+        kinectDepth.set_from_pixbuf(pixbuf)
         Gdk.threads_leave()
         
 
@@ -992,14 +996,20 @@ class viewGUI:
     
   def on_button10_clicked(self, button, event=None):
     self.builder.get_object("button11").disconnect(self.lastsignal0)
-    self.radbut3.set_active(True)
-    self.CameraRun = False
-    self.KinectRun = False
-    self.motion = False
+    #self.radbut3.set_active(True)
+    #self.CameraRun = False
+    #self.KinectRun = False
+    #self.motion = False
     self.window6.hide()
     self.on_camrun()
     self.on_kinrun()
-    return True    
+    return True  
+    
+  def on_del_kinect (self, button, kinect): 
+    self.nKinect -= 1 
+    self.on_kinrun()
+    kinect.destroy()
+
 
   def on_button11_clicked(self, button, tab):
     self.builder.get_object("button11").disconnect(self.lastsignal0)
@@ -1014,16 +1024,33 @@ class viewGUI:
         self.radbut3.set_active(True)
         threading.Thread(target=self.camera).start()
     elif tab == "kin":
+          
       self.KinectRun = False
       self.window6.hide()
       self.Kinect[0] = self.builder.get_object("entry4").get_text()
       self.Kinect[1] = self.builder.get_object("entry5").get_text()
+      
+      
+      hboxkinectcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
+      self.vboxkinectcams.pack_start(hboxkinectcams, True, False, 0)
+      kinectRGB=Gtk.Image()
+      kinectDepth=Gtk.Image()
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams)
+      hboxkinectcams.pack_start(deletebutton, True, False, 0)
+      hboxkinectcams.pack_start(kinectRGB, True, False, 0)
+      hboxkinectcams.pack_start(kinectDepth, True, False, 0)
+      hboxkinectcams.show_all()
+      
       if self.KinectRun == False:
         self.KinectRun = True
+        self.nKinect += 1
         self.on_kinrun()
         #self.radbut3.set_active(True)
-        threading.Thread(target=self.play_kinectRGB).start()
-        threading.Thread(target=self.play_kinectDepth).start()
+        threading.Thread(target=self.play_kinectRGB, args=[kinectRGB,hboxkinectcams]).start()
+        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams]).start()
+        
 
     elif tab == "tmp" or tab == "tmp2":
       self.window6.hide()

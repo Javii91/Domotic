@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.16.1 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
   <object class="GtkDialog" id="dialog1">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox1">
         <property name="can_focus">False</property>
@@ -22,7 +24,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button4_clicked" swapped="no"/>
               </object>
@@ -39,7 +40,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -120,7 +120,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="margin_left">40</property>
-                    <property name="use_action_appearance">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -182,7 +181,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -214,6 +212,7 @@
     <property name="window_position">center-on-parent</property>
     <property name="icon_name">list-add</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox2">
         <property name="can_focus">False</property>
@@ -230,7 +229,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button6_clicked" swapped="no"/>
               </object>
@@ -247,7 +245,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button7_clicked" swapped="no"/>
               </object>
@@ -333,8 +330,6 @@
               <object class="GtkComboBoxText" id="comboboxtext1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item translatable="yes">A1</item>
                   <item translatable="yes">A2</item>
@@ -364,8 +359,6 @@
               <object class="GtkComboBoxText" id="comboboxtext2">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item translatable="yes">Lamp</item>
                   <item translatable="yes">Motion</item>
@@ -395,7 +388,10 @@
   <object class="GtkDialog" id="dialog3">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox5">
         <property name="can_focus">False</property>
@@ -412,7 +408,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button1_clicked" swapped="no"/>
               </object>
@@ -429,7 +424,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -469,7 +463,6 @@
                 <property name="can_focus">True</property>
                 <property name="max_length">15</property>
                 <property name="invisible_char">•</property>
-                <property name="invisible_char_set">True</property>
                 <property name="progress_pulse_step">0.10999999940395355</property>
               </object>
               <packing>
@@ -510,8 +503,6 @@
                   <object class="GtkComboBoxText" id="comboboxtext3">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="entry_text_column">0</property>
-                    <property name="id_column">1</property>
                     <items>
                       <item translatable="yes">00</item>
                       <item translatable="yes">01</item>
@@ -561,8 +552,6 @@
                   <object class="GtkComboBoxText" id="comboboxtext4">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="entry_text_column">0</property>
-                    <property name="id_column">1</property>
                     <items>
                       <item translatable="yes">00</item>
                       <item translatable="yes">05</item>
@@ -600,8 +589,6 @@
                   <object class="GtkComboBoxText" id="comboboxtext5">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="entry_text_column">0</property>
-                    <property name="id_column">1</property>
                     <items>
                       <item translatable="yes">00</item>
                       <item translatable="yes">01</item>
@@ -651,8 +638,6 @@
                   <object class="GtkComboBoxText" id="comboboxtext6">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="entry_text_column">0</property>
-                    <property name="id_column">1</property>
                     <property name="active_id">0</property>
                     <items>
                       <item translatable="yes">00</item>
@@ -689,7 +674,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="use_action_appearance">False</property>
                 <property name="xalign">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
@@ -708,7 +692,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
-                <property name="use_action_appearance">False</property>
                 <property name="xalign">0</property>
                 <property name="active">True</property>
                 <property name="draw_indicator">True</property>
@@ -737,8 +720,10 @@
   <object class="GtkDialog" id="dialog4">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
+    <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox4">
         <property name="can_focus">False</property>
@@ -755,7 +740,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button8_clicked" swapped="no"/>
               </object>
@@ -772,7 +756,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -834,8 +817,6 @@
               <object class="GtkComboBoxText" id="comboboxtext10">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item>On</item>
                   <item>Off</item>
@@ -863,8 +844,6 @@
               <object class="GtkComboBoxText" id="comboboxtext11">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -876,8 +855,6 @@
               <object class="GtkComboBoxText" id="comboboxtext12">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item translatable="yes">Activate</item>
                   <item translatable="yes">Deactivate</item>
@@ -906,7 +883,10 @@
   <object class="GtkDialog" id="dialog5">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox6">
         <property name="can_focus">False</property>
@@ -923,7 +903,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button10_clicked" swapped="no"/>
               </object>
@@ -940,7 +919,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -1033,6 +1011,7 @@
     <property name="border_width">5</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox8">
         <property name="can_focus">False</property>
@@ -1049,7 +1028,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button12_clicked" swapped="no"/>
               </object>
@@ -1066,7 +1044,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -1110,7 +1087,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="margin_left">40</property>
-                    <property name="use_action_appearance">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -1172,7 +1148,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -1198,8 +1173,10 @@
   <object class="GtkDialog" id="dialog7">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
+    <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
+    <property name="urgency_hint">True</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox10">
         <property name="can_focus">False</property>
@@ -1216,7 +1193,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
                 <signal name="clicked" handler="on_button15_clicked" swapped="no"/>
               </object>
@@ -1233,7 +1209,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
@@ -1283,8 +1258,6 @@
               <object class="GtkComboBoxText" id="comboboxtext13">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item>T int &gt;</item>
                   <item>T int &lt;</item>
@@ -1303,7 +1276,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">•</property>
-                <property name="invisible_char_set">True</property>
                 <property name="progress_pulse_step">0.10999999940395355</property>
                 <property name="climb_rate">0.5</property>
                 <property name="digits">1</property>
@@ -1332,8 +1304,6 @@
               <object class="GtkComboBoxText" id="comboboxtext8">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -1345,8 +1315,6 @@
               <object class="GtkComboBoxText" id="comboboxtext9">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="entry_text_column">0</property>
-                <property name="id_column">1</property>
                 <items>
                   <item translatable="yes">Activate</item>
                   <item translatable="yes">Deactivate</item>
@@ -1374,9 +1342,9 @@
   </object>
   <object class="GtkWindow" id="window1">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">x10view</property>
+    <property name="title" translatable="yes">Security</property>
     <property name="resizable">False</property>
-    <property name="window_position">center-always</property>
+    <property name="window_position">center</property>
     <child>
       <placeholder/>
     </child>
