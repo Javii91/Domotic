@@ -508,7 +508,8 @@ class viewGUI:
         break
       data = kin.getImageData(formatRGB)
       pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
-      pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.HYPER);
+      if resolution(0) != data.description.width:
+        pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.BILINEAR);
       Gdk.threads_enter()
       kinectRGB.clear()
       kinectRGB.set_from_pixbuf(pixbuf)
@@ -639,7 +640,8 @@ class viewGUI:
       else:
         datos = Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw')
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(datos, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
-        pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.HYPER);
+        if resolution(0) != data.description.width:
+          pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.BILINEAR);
         Gdk.threads_enter()
         kinectDepth.clear()
         kinectDepth.set_from_pixbuf(pixbuf)
