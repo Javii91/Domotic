@@ -31,8 +31,9 @@ class viewGUI:
 
   Modus = []
   x10 = ["", ""]
-  Camera = ["",""]
+  Camera = [["",""]]
   Kinect = [["",""]]
+  nCam = 0
   nKinect = 0
   KinectRun = False
   Temperature = ["",""]
@@ -48,7 +49,7 @@ class viewGUI:
   x10_on = False
 
 
-  def __init__(self, propsx10 = None, propscam= None, propstmp= None, propskin= None):
+  def __init__(self, propsx10 = None, propscam= None, propstmp= None, propskin= None, propsoth=None):
     self.builder = Gtk.Builder()
     self.builder.add_from_file("security.glade")
     self.builder.connect_signals(self)
@@ -70,12 +71,17 @@ class viewGUI:
       
     self.notebook = Gtk.Notebook()
     self.window.add(self.notebook)
-    self.load_other()
+    
+    self.load_other()    
+    if propsoth:
+      self.checkOthers(propsoth)
+    
+    
+      
+    self.cameratab()
     
     if propscam:
       self.checkCamera(propscam)
-      
-    self.cameratab()
     
     self.kinecttab()
     
@@ -173,8 +179,11 @@ class viewGUI:
     text = MIMEText("Alert Information \n Sensor: " + sensor + "\n Time: " + str(datetime.now()))
     msg.attach(text)
     if imagen != None:
-      imagen.add_header('Content-ID', '<image1>')
-      msg.attach(imagen)
+      no = 0
+      for img in imagen:
+        no += 1
+        img.add_header('Content-ID', '<image'+str(no)+'>')
+        msg.attach(img)
 
     s = smtplib.SMTP("smtpcorp.com", 2525)
     s.ehlo()
@@ -253,9 +262,15 @@ class viewGUI:
           f.write("x10.Module."+i.code+".rules."+str(a)+"="+ n+"\n")
           a += 1
         f.write("\n")
-    if self.Camera[0] != "" and self.Camera[1] != 0:
+    if len(self.Camera) > 1:
       f.write("# Camera configuration \n")
-      f.write("cam.Proxy=CameraA:default -h "+self.Camera[0]+" -p " + self.Camera[1] +"\n")
+      f.write("cam.sensors="+str(len(self.Camera)-1)+"\n")
+      c = 0 
+      for n in self.Camera:
+        if c != 0:
+          f.write("cam."+ str(c)+".Proxy=CameraA:default -h "+n[0]+" -p " + n[1] +"\n")
+        c = c + 1
+        
       f.write("\n")
     if self.Temperature[0] != "" and self.Temperature[1] != 0:
       f.write("# Temperature configuration \n")
@@ -281,6 +296,13 @@ class viewGUI:
         c = c + 1
         
       f.write("\n")
+      
+    if len(self.Kinect) > 1:
+      f.write("# Other configuration \n")
+      f.write("oth.mailadress="+self.mailother.get_text()+"\n")
+      f.write("oth.secondsint="+self.mailtime.get_text()+"\n")
+      f.write("oth.resolution="+self.resolution.get_active_text()+"\n")  
+      f.write("\n")
     f.close()
 
 
@@ -299,7 +321,7 @@ class viewGUI:
     self.vbox2.pack_start(self.vboxenv, True, False, 0)
     
   def on_camrun (self):
-    if self.CameraRun == False:
+    if self.CameraRun == False or self.nCam == 0:
       self.motiontable.hide()
       self.motiontable2.hide() 
       self.labelmt.hide()
@@ -312,6 +334,8 @@ class viewGUI:
       self.labelmt.show()
       self.ad.show()
       self.radbut3.set_active(True)
+      if self.motion == False:
+        self.motiontable.hide()
       
   def on_kinrun (self):
     if self.KinectRun == False or self.nKinect == 0:
@@ -350,23 +374,47 @@ class viewGUI:
     self.adkinect.set_active(False)
     self.hboxkinect.pack_start(self.adkinect, True, True, 0)
     
-    self.motiontablekinect = Gtk.Table(5, 2, True)
+    self.motiontablekinect = Gtk.Table(6, 3, True)
     self.motiontablekinect.attach(Gtk.Label(""), 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontablekinect.attach(Gtk.Label(""), 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontablekinect.attach(Gtk.Label("Objects in motion:"), 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     self.kinpeoplecounter = Gtk.Label("0")
     self.motiontablekinect.attach(self.kinpeoplecounter, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.checkbutkin = Gtk.CheckButton(label="Send Mail when motion")
+    self.motiontablekinect.attach(self.checkbutkin, 0, 1, 5, 6,yoptions=Gtk.AttachOptions.SHRINK)
+    
+    self.combomotionkinect = Gtk.ComboBoxText()
+    self.load_actuator_combotext(self.combomotionkinect)
+    self.checkbutkinAct = Gtk.CheckButton(label="When motion")
+    self.combomotionkinectAct = Gtk.ComboBoxText()
+    self.combomotionkinectAct.append_text("Activate")
+    self.combomotionkinectAct.append_text("Deactivate")
+    self.combomotionkinectAct.set_active(0)
+    self.motiontablekinect.attach(self.checkbutkinAct, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontablekinect.attach(self.combomotionkinectAct, 1, 2, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontablekinect.attach(self.combomotionkinect, 2, 3, 3, 4,yoptions=Gtk.AttachOptions.SHRINK) 
+    
+    self.combomotionkinect2 = Gtk.ComboBoxText()
+    self.load_actuator_combotext(self.combomotionkinect2)
+    self.checkbutkinAct2 = Gtk.CheckButton(label="When motion")
+    self.combomotionkinectAct2 = Gtk.ComboBoxText()
+    self.combomotionkinectAct2.append_text("Activate")
+    self.combomotionkinectAct2.append_text("Deactivate")
+    self.combomotionkinectAct2.set_active(0)
+    self.motiontablekinect.attach(self.checkbutkinAct2, 0, 1, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontablekinect.attach(self.combomotionkinectAct2, 1, 2, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontablekinect.attach(self.combomotionkinect2, 2, 3, 4, 5,yoptions=Gtk.AttachOptions.SHRINK) 
     
     self.vboxkinect.pack_start(self.motiontablekinect, True, True, 0)
     
   def cameratab (self):
     self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    self.cam=Gtk.Image()
-    self.vbox.pack_start(self.cam, True, False, 0)
+    self.hboxcams = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1)
+    self.vbox.pack_start(self.hboxcams, True, False, 0)
     
 
     image = Gtk.Image(stock=Gtk.STOCK_PROPERTIES)
-    self.camopt = Gtk.Button(label=" Properties", image=image)
+    self.camopt = Gtk.Button(label=" Add Camera Sensor", image=image)
     self.camopt.connect("clicked", self.cameracfg, "cam")
     self.vbox.pack_start(self.camopt, True, False, 0)
     
@@ -387,18 +435,43 @@ class viewGUI:
     
     
     #self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    self.motiontable = Gtk.Table(5, 2, True)
+    self.motiontable = Gtk.Table(6, 3, True)
     self.motiontable.attach(Gtk.Label(""), 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable.attach(Gtk.Label(""), 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
-    self.motiontable.attach(Gtk.Label("Objects in motion:"), 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Objects in motion:"), 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     self.campeoplecounter = Gtk.Label("0")
-    self.motiontable.attach(self.campeoplecounter, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
-    self.checkbut = Gtk.CheckButton(label="Send Alert when motion")#
-    self.motiontable.attach(self.checkbut, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)#
-    self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when motion of")
-    self.motiontable.attach(self.radbut1, 0, 1, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
-    self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.campeoplecounter, 1, 2, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
+    self.checkbut = Gtk.CheckButton(label="Send Mail when motion")
+    self.motiontable.attach(self.checkbut, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Record options"), 0, 1, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
+    self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when activation of")
+    self.motiontable.attach(self.radbut1, 0, 1, 5, 6,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 5, 6,yoptions=Gtk.AttachOptions.SHRINK)
     self.vbox.pack_start(self.motiontable, True, True, 0)
+    
+    
+    self.combomotioncam = Gtk.ComboBoxText()
+    self.load_actuator_combotext(self.combomotioncam)
+    self.checkbutcamAct = Gtk.CheckButton(label="When motion")
+    self.combomotioncamAct = Gtk.ComboBoxText()
+    self.combomotioncamAct.append_text("Activate")
+    self.combomotioncamAct.append_text("Deactivate")
+    self.combomotioncamAct.set_active(0)
+    self.motiontable.attach(self.checkbutcamAct, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.combomotioncamAct, 1, 2, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.combomotioncam, 2, 3, 1, 2,yoptions=Gtk.AttachOptions.SHRINK) 
+    
+    self.combomotioncam2 = Gtk.ComboBoxText()
+    self.load_actuator_combotext(self.combomotioncam2)
+    self.checkbutcamAct2 = Gtk.CheckButton(label="When motion")
+    self.combomotioncamAct2 = Gtk.ComboBoxText()
+    self.combomotioncamAct2.append_text("Activate")
+    self.combomotioncamAct2.append_text("Deactivate")
+    self.combomotioncamAct2.set_active(0)
+    self.motiontable.attach(self.checkbutcamAct2, 0, 1, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.combomotioncamAct2, 1, 2, 2, 3,yoptions=Gtk.AttachOptions.SHRINK)
+    self.motiontable.attach(self.combomotioncam2, 2, 3, 2, 3,yoptions=Gtk.AttachOptions.SHRINK) 
+    
     
     
     self.motiontable2 = Gtk.Table(2, 2, False)
@@ -420,6 +493,13 @@ class viewGUI:
       if i.isSensor():
         widget.append_text("("+i.code+") "+i.name)
     widget.set_active(0)
+    
+  def load_actuator_combotext(self, widget):
+    widget.remove_all()
+    for i in self.Modus:
+      if not i.isSensor():
+        widget.append_text("("+i.code+") "+i.name)
+    widget.set_active(0)
   
   def motionrec_tog (self, button, n):
     if n == 1:
@@ -437,6 +517,8 @@ class viewGUI:
   def on_motion (self, button, event):
     if self.motion == False:
       self.motion = True
+      self.load_actuator_combotext(self.combomotioncam)
+      self.load_actuator_combotext(self.combomotioncam2)
       self.motiontable.show() 
     else:
       self.motion = False
@@ -446,6 +528,8 @@ class viewGUI:
   def on_motionkinect (self, button, event):
     if self.motionKin == False:
       self.motionKin = True
+      self.load_actuator_combotext(self.combomotionkinect)
+      self.load_actuator_combotext(self.combomotionkinect2)
       self.motiontablekinect.show() 
     else:
       self.motionKin = False
@@ -456,8 +540,8 @@ class viewGUI:
     self.window6 = self.builder.get_object("dialog5")
     self.window6.connect("delete_event", self.on_button10_clicked)
     if tab == "cam":
-      self.builder.get_object("entry4").set_text(self.Camera[0])
-      self.builder.get_object("entry5").set_text(self.Camera[1])
+      self.builder.get_object("entry4").set_text(self.Camera[0][0])
+      self.builder.get_object("entry5").set_text(self.Camera[0][1])
     elif tab == "kin":
       self.builder.get_object("entry4").set_text(self.Kinect[0][0])
       self.builder.get_object("entry5").set_text(self.Kinect[0][1])
@@ -501,13 +585,16 @@ class viewGUI:
     except:
       print "KinectRGB: Connection Failed"
       return
-
+    
     formatRGB = kin.getImageFormat()[0]
     while True:
       if threads == False or self.KinectRun == False or not hboxkinectcams in self.vboxkinectcams:
         break
       data = kin.getImageData(formatRGB)
       pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+      
+      
+      
       if resolution(0) != data.description.width:
         pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.BILINEAR);
       Gdk.threads_enter()
@@ -517,7 +604,7 @@ class viewGUI:
         
         
         
-  def play_kinectDepth (self, kinectDepth,hboxkinectcams):
+  def play_kinectDepth (self, kinectDepth,hboxkinectcams, kinectRGB):
     def resolution (n = None):
       if self.resolution.get_active_text() == "160x120":
         if n == None:
@@ -557,9 +644,10 @@ class viewGUI:
     except:
       print "KinectDepth: Connection Failed"
       self.Kinect.pop()
-      self.on_del_kinect(None, hboxkinectcams)
+      self.on_del_kinect(None, hboxkinectcams, None)
       return
     
+    t_start_pic = time.time() - int(self.mailtime.get_text())
     formatDepth= kin.getImageFormat()[0]
     data = kin.getImageData(formatDepth)
       
@@ -626,7 +714,10 @@ class viewGUI:
           pt2 = (bound_rect[0] + bound_rect[2], bound_rect[1] + bound_rect[3])
           points.append(pt1)
           points.append(pt2)
-          cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
+          if bound_rect[2] < 50 or bound_rect[3] <50:
+            n = n -1
+          else:
+            cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
           
         color_image = cv2.resize(numpy.array(color_image), resolution())
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(color_image).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, resolution(0),resolution(1), resolution(0)*3,None, None)
@@ -636,7 +727,30 @@ class viewGUI:
         kinectDepth.clear()
         kinectDepth.set_from_pixbuf(pixbuf)
         Gdk.threads_leave()
-          
+        
+        Gdk.threads_enter()
+        if self.checkbutkin.get_active() and n > 0:
+          if time.time() - t_start_pic > int(self.mailtime.get_text()):
+            t_start_pic = time.time()
+            ima = Image.fromstring('RGB', (data.description.width,data.description.height), Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw'), 'raw', "RGB")
+            outbuf = cStringIO.StringIO()
+            ima.save(outbuf, format="PNG")
+            my_mime_image = MIMEImage(outbuf.getvalue(), name="CaptureDepth_"+str(datetime.now()))
+            
+            ima2 = Image.fromstring('RGB', (data.description.width,data.description.height),kinectRGB.get_pixbuf().get_pixels(), 'raw', "RGB")
+            outbuf2 = cStringIO.StringIO()
+            ima2.save(outbuf2, format="PNG")
+            my_mime_image2 = MIMEImage(outbuf2.getvalue(), name="CaptureRGB_"+str(datetime.now()))
+            
+            self.send_mail("Kinect", [my_mime_image,my_mime_image2])
+        
+        if n > 0:
+          if self.checkbutkinAct.get_active():
+            self.camera_act(self.combomotionkinectAct.get_active_text(), self.combomotionkinect.get_active_text())
+          if self.checkbutkinAct2.get_active():
+            self.camera_act(self.combomotionkinectAct2.get_active_text(), self.combomotionkinect2.get_active_text())
+        Gdk.threads_leave()
+        
       else:
         datos = Image.fromarray(RGB_to_depth(data, "BGR")).tostring('raw')
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(datos, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
@@ -649,29 +763,55 @@ class viewGUI:
         
 
     
-  def camera (self):
+  def camera (self, camera, widget):
+    def resolution (n = None):
+      if self.resolution.get_active_text() == "160x120":
+        if n == None:
+          return (160,120)
+        elif n == 0:
+          return 160
+        else:
+          return 120
+      elif self.resolution.get_active_text() == "320x240":
+        if n == None:
+          return (320,240)
+        elif n == 0:
+          return 320
+        else:
+          return 240
+      else: 
+        if n == None:
+          return (640,480)
+        elif n == 0:
+          return 640
+        else:
+          return 480
     def data_to_image (data, rgbObgr):
       img= Image.fromstring('RGB', (data.description.width,data.description.height), data.pixelData, 'raw', rgbObgr)
       pix = numpy.array(img)
       return pix
     
-    t_start_pic = time.time()
-  
+    t_start_pic = time.time() - int(self.mailtime.get_text())
+    
     try:
       #ic2 = Ice.initialize()    
       #obj2 = ic2.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
-      obj2 = ic.stringToProxy('cameraA:default -h '+self.Camera[0]+' -p ' + self.Camera[1])
+      obj2 = ic.stringToProxy('cameraA:default -h '+self.Camera[self.nCam][0]+' -p ' + self.Camera[self.nCam][1])
       cam = jderobot.CameraPrx.checkedCast(obj2)
     except:
       print "Camera: Connection Failed"
       Gdk.threads_enter()
-      self.CameraRun = False
-      self.on_camrun()
+      self.Camera.pop()
+      self.on_del_cam(None, widget, None)
       Gdk.threads_leave()
       return
     
     # motion
-    frame_size = (320,240)
+    hostport= self.Camera[self.nCam][0]+':' + self.Camera[self.nCam][1]
+    formatcam= cam.getImageFormat()[0]
+    data = cam.getImageData(formatcam)
+      
+    frame_size = (data.description.width,data.description.height)
     color_image = cv.CreateImage(frame_size, 8, 3)
     grey_image = cv.CreateImage(frame_size, cv.IPL_DEPTH_8U, 1)
     moving_average = cv.CreateImage(frame_size, cv.IPL_DEPTH_32F, 3)
@@ -679,18 +819,22 @@ class viewGUI:
     first = True
     first_rec = True
     first_zero = False
+    ult_suma = 0
     
     
     while True:
-      if threads == False or self.CameraRun == False:
+      if threads == False or self.CameraRun == False or not widget in self.hboxcams:
+        Gdk.threads_enter()
+        self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())-ult_suma)+"</b>")
+        Gdk.threads_leave()
         break
       
-      data = cam.getImageData("RGB8")
+      data = cam.getImageData(formatcam)
       if self.record == False:
         first_rec = True
       
       if first_rec == True and self.record == True:
-        out = cv2.VideoWriter(datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
+        out = cv2.VideoWriter("Camera_" +hostport+"_"+datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
         first_rec = False
         
       if self.motion == True:
@@ -739,7 +883,10 @@ class viewGUI:
           pt2 = (bound_rect[0] + bound_rect[2], bound_rect[1] + bound_rect[3])
           points.append(pt1)
           points.append(pt2)
-          cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
+          if bound_rect[2] < 50 or bound_rect[3] <50:
+            n = n -1
+          else:
+            cv.Rectangle(color_image, pt1, pt2, cv.CV_RGB(0,255,0), 1)
           
         Gdk.threads_enter()
         if self.checkbut.get_active() and n > 0:
@@ -749,7 +896,12 @@ class viewGUI:
             outbuf = cStringIO.StringIO()
             ima.save(outbuf, format="PNG")
             my_mime_image = MIMEImage(outbuf.getvalue(), name="Capture_"+str(datetime.now()))
-            self.send_mail("Camera", my_mime_image)
+            self.send_mail("Camera", [my_mime_image])
+        if n > 0:
+          if self.checkbutcamAct.get_active():
+            self.camera_act(self.combomotioncamAct.get_active_text(), self.combomotioncam.get_active_text())
+          if self.checkbutcamAct2.get_active():
+            self.camera_act(self.combomotioncamAct2.get_active_text(), self.combomotioncam2.get_active_text())
         Gdk.threads_leave()
 
     
@@ -761,7 +913,7 @@ class viewGUI:
           first_zero = True
           
         if first_rec == True and self.record == True:
-          out = cv2.VideoWriter(datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
+          out = cv2.VideoWriter("Camera_" +hostport+"_"+datetime.now().ctime() + '.avi',cv2.cv.CV_FOURCC('X','V','I','D'), 10.0, frame_size)
           first_rec = False
           
         
@@ -777,9 +929,13 @@ class viewGUI:
           imagen2 = data_to_image (data, "BGR")
           out.write(imagen2)
         Gdk.threads_enter()
-        self.campeoplecounter.set_markup("<b>"+str(n)+"</b>")
-        self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
-        self.cam.set_from_pixbuf(self.img_pixbuf)
+        self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())+n-ult_suma)+"</b>")
+        ult_suma = n
+        pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        if resolution(0) != data.description.width:
+          pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.BILINEAR);
+        camera.clear()
+        camera.set_from_pixbuf(pixbuf)
         Gdk.threads_leave()
         
         
@@ -789,8 +945,11 @@ class viewGUI:
           imagen = data_to_image (data, "BGR")
           out.write(imagen)
         Gdk.threads_enter()
-        self.img_pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
-        self.cam.set_from_pixbuf(self.img_pixbuf)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_data(data.pixelData, GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
+        if resolution(0) != data.description.width:
+          pixbuf = pixbuf.scale_simple(resolution(0), resolution(1), GdkPixbuf.InterpType.BILINEAR);
+        camera.clear()
+        camera.set_from_pixbuf(pixbuf)
         Gdk.threads_leave()
         
         
@@ -914,6 +1073,17 @@ class viewGUI:
               for m in self.Modus:
                 if m.name == pieces[1].split(")")[1][1:]:
                   self.net.setInactive(m.name)
+                  
+  def camera_act (self, do, to):
+    if to != "":
+      for n in self.Modus:
+        if n.name == to.split(")")[1][1:]:
+          if do == "Activate":
+            self.net.setActive(n.name)
+          else:
+            self.net.setInactive(n.name)
+          break
+        
         
 
 
@@ -1073,18 +1243,27 @@ class viewGUI:
   def on_button10_clicked(self, button, event=None):
     self.builder.get_object("button11").disconnect(self.lastsignal0)
     self.radbut3.set_active(True)
-    self.CameraRun = False
+    #self.CameraRun = False
     #self.KinectRun = False
-    self.motion = False
+    #self.motion = False
     self.window6.hide()
     self.on_camrun()
     self.on_kinrun()
     return True  
     
-  def on_del_kinect (self, button, kinect): 
+  def on_del_kinect (self, button, kinect, n): 
+    if n != None:
+      del self.Kinect[self.Kinect.index(n)]
     self.nKinect -= 1 
     self.on_kinrun()
     kinect.destroy()
+  
+  def on_del_cam (self, button, cam, n):
+    if n != None:
+      del self.Camera[self.Camera.index(n)] 
+    self.nCam -= 1 
+    self.on_camrun()
+    cam.destroy()
 
 
   def on_button11_clicked(self, button, tab):
@@ -1092,13 +1271,27 @@ class viewGUI:
     if tab == "cam":
       self.CameraRun = False
       self.window6.hide()
-      self.Camera[0] = self.builder.get_object("entry4").get_text()
-      self.Camera[1] = self.builder.get_object("entry5").get_text()
+      host = self.builder.get_object("entry4").get_text()
+      port = self.builder.get_object("entry5").get_text()
+      self.Camera.append([host,port])
+      
+      
+      hboxcams = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+      self.hboxcams.pack_start(hboxcams, True, False, 0)
+      cam=Gtk.Image()
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_del_cam, hboxcams, [host,port])
+      hboxcams.pack_start(cam, True, False, 0)
+      hboxcams.pack_start(deletebutton, True, False, 0)
+      hboxcams.show_all()
+      
       if self.CameraRun == False:
         self.CameraRun = True
+        self.nCam += 1
         self.on_camrun()
         self.radbut3.set_active(True)
-        threading.Thread(target=self.camera).start()
+        threading.Thread(target=self.camera, args=[cam,hboxcams]).start()
     elif tab == "kin":
           
       self.KinectRun = False
@@ -1114,7 +1307,7 @@ class viewGUI:
       kinectDepth=Gtk.Image()
       deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
       deletebutton = Gtk.Button(image=deletebuttonimage)
-      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams)
+      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams, [host,port])
       hboxkinectcams.pack_start(deletebutton, True, False, 0)
       hboxkinectcams.pack_start(kinectRGB, True, False, 0)
       hboxkinectcams.pack_start(kinectDepth, True, False, 0)
@@ -1126,7 +1319,7 @@ class viewGUI:
         self.on_kinrun()
         #self.radbut3.set_active(True)
         threading.Thread(target=self.play_kinectRGB, args=[kinectRGB,hboxkinectcams]).start()
-        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams]).start()
+        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams,kinectRGB]).start()
         
 
     elif tab == "tmp" or tab == "tmp2":
@@ -1179,7 +1372,7 @@ class viewGUI:
       self.envopt.destroy()
       self.x10_on = True
       self.environment()
-      self.vboxenv.pack_start(self.maingrid, True, False, 0)
+      self.vboxenv.pack_start(self.maingrid, False, False, 0)
       self.vboxenv.show_all()
       
       #threading.Thread(target=self.askdformods).start()
@@ -1224,7 +1417,7 @@ class viewGUI:
     
   def on_button15_clicked (self, button, event=None):
     self.window8.hide()
-    self.tabletmp.destroy()
+    #self.tabletmp.destroy()
     self.changetmp3.disconnect(self.lastsignaltmp3)
     return True
   
@@ -1563,16 +1756,50 @@ class viewGUI:
         del mo2[mo2.index(n)]
     return mo2
     
+  def checkOthers (self, props):
+      
+    self.mailother.set_text(props["oth.mailadress"])
+    self.mailtime.set_text(props["oth.secondsint"])
+    if props["oth.resolution"] == "160x120":
+      self.resolution.set_active(0)
+    elif props["oth.resolution"] == "320x240":
+      self.resolution.set_active(1)
+    elif props["oth.resolution"] == "640x480":
+      self.resolution.set_active(2)
+      
+      
   def checkCamera (self, props):
-    self.Camera[0] = props["cam.Proxy"].split("CameraA:default -h ")[1].split(" -p")[0]
-    self.Camera[1] = props["cam.Proxy"].split(" -p")[1]
+    nsensores = props["cam.sensors"]
+    for n in range(1,int(nsensores)+1):
+      host = props["cam."+str(n)+".Proxy"].split("CameraA:default -h ")[1].split(" -p ")[0]
+      port = props["cam."+str(n)+".Proxy"].split(" -p ")[1]
+      self.Camera.append([host,port])
+      self.CameraRun = False
+      
+      hboxcams = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+      self.hboxcams.pack_start(hboxcams, True, False, 0)
+      cam=Gtk.Image()
+      deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+      deletebutton = Gtk.Button(image=deletebuttonimage)
+      deletebutton.connect("clicked", self.on_del_cam, hboxcams, [host,port])
+      hboxcams.pack_start(cam, True, False, 0)
+      hboxcams.pack_start(deletebutton, True, False, 0)
+      hboxcams.show_all()
+      
+      if self.CameraRun == False:
+        self.CameraRun = True
+        self.nCam += 1
+        self.on_camrun()
+        self.radbut3.set_active(True)
+        threading.Thread(target=self.camera, args=[cam,hboxcams]).start()
+
     
   def checkKinect (self, props):
     
     nsensores = props["kin.sensors"]
     for n in range(1,int(nsensores)+1):
-      host = props["kin."+str(n)+".Proxy"].split("default -h ")[1].split(" -p")[0]
-      port = props["kin."+str(n)+".Proxy"].split(" -p")[1]
+      host = props["kin."+str(n)+".Proxy"].split("default -h ")[1].split(" -p ")[0]
+      port = props["kin."+str(n)+".Proxy"].split(" -p ")[1]
       self.Kinect.append([host,port])
       
       self.KinectRun = False
@@ -1584,7 +1811,7 @@ class viewGUI:
       kinectDepth=Gtk.Image()
       deletebuttonimage = Gtk.Image(stock=Gtk.STOCK_CANCEL)
       deletebutton = Gtk.Button(image=deletebuttonimage)
-      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams)
+      deletebutton.connect("clicked", self.on_del_kinect, hboxkinectcams, [host,port])
       hboxkinectcams.pack_start(deletebutton, True, False, 0)
       hboxkinectcams.pack_start(kinectRGB, True, False, 0)
       hboxkinectcams.pack_start(kinectDepth, True, False, 0)
@@ -1596,7 +1823,7 @@ class viewGUI:
         self.on_kinrun()
         #self.radbut3.set_active(True)
         threading.Thread(target=self.play_kinectRGB, args=[kinectRGB,hboxkinectcams]).start()
-        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams]).start()
+        threading.Thread(target=self.play_kinectDepth, args=[kinectDepth,hboxkinectcams,kinectRGB]).start()
       
       
      
@@ -1608,8 +1835,8 @@ class viewGUI:
       else:
          return False
          
-    self.Temperature[0] = props["tmp.Proxy"].split("Temperature:default -h ")[1].split(" -p")[0]
-    self.Temperature[1] = props["tmp.Proxy"].split(" -p")[1]
+    self.Temperature[0] = props["tmp.Proxy"].split("Temperature:default -h ")[1].split(" -p ")[0]
+    self.Temperature[1] = props["tmp.Proxy"].split(" -p ")[1]
     self.temp_celsius = str_to_bool(props["tmp.use_Celsius"])
     if "tmp.rules" in props:
       for m in range(0,int(props["tmp.rules"])):
@@ -1627,8 +1854,8 @@ class viewGUI:
          return False
          
     if "x10.Proxy" in props:
-      self.x10[0] = props["x10.Proxy"].split("Net:default -h ")[1].split(" -p")[0]
-      self.x10[1] = props["x10.Proxy"].split(" -p")[1]
+      self.x10[0] = props["x10.Proxy"].split("Net:default -h ")[1].split(" -p ")[0]
+      self.x10[1] = props["x10.Proxy"].split(" -p ")[1]
       
       try:
         base = ic.stringToProxy('Net:default -h '+self.x10[0]+' -p ' + self.x10[1])
@@ -1675,7 +1902,8 @@ if __name__ == "__main__":
     propscam = ic.getProperties().getPropertiesForPrefix("cam")
     propstmp = ic.getProperties().getPropertiesForPrefix("tmp")
     propskin = ic.getProperties().getPropertiesForPrefix("kin")
-    GUI = viewGUI(propsx10, propscam, propstmp, propskin)
+    propsoth = ic.getProperties().getPropertiesForPrefix("oth")
+    GUI = viewGUI(propsx10, propscam, propstmp, propskin, propsoth)
   else:
     GUI = viewGUI()
     
