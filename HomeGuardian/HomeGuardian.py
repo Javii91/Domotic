@@ -101,7 +101,7 @@ class viewGUI:
       self.environment()
       self.notebook.append_page(self.maingrid, Gtk.Label("Environment"))
       
-      #threading.Thread(target=self.askdformods).start()
+      threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
       
       #self.maingrid.show_all()
@@ -922,14 +922,14 @@ class viewGUI:
         if self.record and n == 0 and first_zero:
           first_zero = False
           t_start = time.time()
-        elif self.record and n == 0 and time.time() - t_start > 5:
+        elif self.record and n == 0 and time.time() - t_start > 10:
           self.record = False
       
         if self.record:
           imagen2 = data_to_image (data, "BGR")
           out.write(imagen2)
         Gdk.threads_enter()
-        self.kinpeoplecounter.set_markup("<b>"+str(int(self.kinpeoplecounter.get_text())+n-ult_suma)+"</b>")
+        self.campeoplecounter.set_markup("<b>"+str(int(self.campeoplecounter.get_text())+n-ult_suma)+"</b>")
         ult_suma = n
         pixbuf = GdkPixbuf.Pixbuf.new_from_data(Image.fromarray(numpy.array(color_image)).tostring('raw'), GdkPixbuf.Colorspace.RGB, False, 8, data.description.width,data.description.height, data.description.width*3,None, None)
         if resolution(0) != data.description.width:
@@ -998,6 +998,11 @@ class viewGUI:
         Gdk.threads_enter()
         self.table.destroy()
         self.modtable()
+        self.load_sensors_combotext(self.combomotion)
+        self.load_actuator_combotext(self.combomotionkinect)
+        self.load_actuator_combotext(self.combomotionkinect2)
+        self.load_actuator_combotext(self.combomotioncam)
+        self.load_actuator_combotext(self.combomotioncam2)
         Gdk.threads_leave()
       else:
         for i in self.Modus:
@@ -1010,6 +1015,11 @@ class viewGUI:
             Gdk.threads_enter()
             self.table.destroy()
             self.modtable()
+            self.load_sensors_combotext(self.combomotion)
+            self.load_actuator_combotext(self.combomotionkinect)
+            self.load_actuator_combotext(self.combomotionkinect2)
+            self.load_actuator_combotext(self.combomotioncam)
+            self.load_actuator_combotext(self.combomotioncam2)
             Gdk.threads_leave()
             break
               
@@ -1088,7 +1098,7 @@ class viewGUI:
 
 
   def on_button9_clicked (self, button, mod):
-    self.setRule(mod.name,self.builder.get_object("comboboxtext11").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext12").get_active_text())
+    self.setRule(mod.name,self.builder.get_object("comboboxtext10").get_active_text(),self.combotextmodus.get_active_text(), self.builder.get_object("comboboxtext12").get_active_text())
     self.builder.get_object("label13").set_label("")
     self.window5.hide()
     self.change3.disconnect(self.lastsignal3)
@@ -1109,7 +1119,8 @@ class viewGUI:
     self.window5.show_all()
     self.change3 = self.builder.get_object("button9")
     self.lastsignal3 = self.change3.connect("clicked", self.on_button9_clicked, mod)
-    self.combotextmodus = self.builder.get_object("comboboxtext10")
+    self.combotextmodus = self.builder.get_object("comboboxtext11")
+    self.builder.get_object("comboboxtext10").set_active(0)
     self.builder.get_object("comboboxtext11").set_active(0)
     self.builder.get_object("comboboxtext12").set_active(0)
     rdymods = self.parsemymods()
@@ -1375,7 +1386,7 @@ class viewGUI:
       self.vboxenv.pack_start(self.maingrid, False, False, 0)
       self.vboxenv.show_all()
       
-      #threading.Thread(target=self.askdformods).start()
+      threading.Thread(target=self.askdformods).start()
       threading.Thread(target=self.checkAlarm).start()
       self.maingrid.show_all()
   
@@ -1884,6 +1895,7 @@ class viewGUI:
           mod.mail_alert = str_to_bool(props["x10.Module.A" + str(i) + ".mail_alert"])
           self.Modus.append(mod)
           self.net.addModule(mod.name, mod.code, mod.mtype)
+
 
 
             

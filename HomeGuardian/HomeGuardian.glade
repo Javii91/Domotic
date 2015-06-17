@@ -107,7 +107,7 @@
                   <object class="GtkLabel" id="label10">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes"> Send alert when is activated</property>
+                    <property name="label" translatable="yes"> Send Mail when is activated</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>

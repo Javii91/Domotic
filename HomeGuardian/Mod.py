@@ -59,7 +59,6 @@ class Mod:
     self.rules.append(mystate +"|"+yourstate+"|"+action)
 
   def getRules(self):
-    print id(self.rules)
     return self.rules
 
   def delRules(self, i):
