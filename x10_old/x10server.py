@@ -25,13 +25,6 @@ class NetI(x10.Net):
         response += txt.gray(str(i)+"\n")
     print response
     
-  def isCode(self, code, current=None):
-    for i in Modules:
-      if (i.code == code):
-        return True
-    return False
-        
-    
   def getEnvironment(self, current=None):
     response = ""
     for i in Modules:
@@ -42,8 +35,7 @@ class NetI(x10.Net):
     found = False
     for i in Modules:
       if (i.name == name) and i.isSensor() != True:
-        if i.active == False:
-          print txt.warning("  Activating module " + i.name + "...")
+        print txt.warning("  Activating module " + i.name + "...")
         i.setActive()
         found = True
         break
@@ -58,8 +50,7 @@ class NetI(x10.Net):
     found = False
     for i in Modules:
       if (i.name == name) and i.isSensor() != True:
-        if i.active == True:
-          print txt.warning("  Desactivating module " + i.name + "...")
+        print txt.warning("  Desactivating module " + i.name + "...")
         i.setInactive()
         found = True
         break
@@ -78,6 +69,71 @@ class NetI(x10.Net):
       if (i.name == name) and i.isSensor() == True:
         return True
 
+  def setAlarm(self, name, sh, sm, eh, em, act, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.setcfgAlarm(sh,sm,eh,em,act)
+        if act == True:
+          print txt.warning("  Timer set to " + i.name + " (" + i.code + ") -> ["+sh+":"+sm+"]-["+eh+":"+em+"].")
+          #Programo encendido
+          pass
+        break
+  
+  
+  def getAlarm(self, name, current=None):
+    for i in Modules:
+      if i.name == name:
+        alarm = i.getcfgAlarm()
+        return str(alarm[0]) + "|" + alarm[1] + "|" + alarm[2] + "|" + alarm[3] + "|" + alarm[4]
+
+
+  def getRule(self, name, current=None):
+    for i in Modules:
+      if i.name == name:
+        alarm = i.getRules()
+        return "|".join(alarm)
+
+  def setRule(self, name, SenState, selectMod, Action, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.setRules(SenState,selectMod,Action)
+        print txt.warning("  Rule set to " + i.name + " (" + i.code + ") -> when " +SenState+ " then " + Action + " " + selectMod + ".")
+        break
+
+  def delRule(self, name, rule, current=None):
+    for i in Modules:
+      if i.name == name:
+        i.delRules(rule)
+        break
+
+  def doRules(self,name, state, current=None):
+    for i in Modules:
+      if i.name == name:
+        rules = i.getRules()
+        for r in rules:
+          pieces = r.split("|")
+          if pieces[0] == "On" and state == True:
+            if pieces[2] == "Activate":
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setActive()
+            else:
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setInactive()
+          elif pieces[0] == "Off" and state == False:
+            if pieces[2] == "Activate":
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setActive()
+            else:
+              for m in Modules:
+                if m.name == pieces[1].split(")")[1][1:]:
+                  m.setInactive()
+
+
+
+      
    
   def addModule (self, name, code, mtype, current=None):
     if mtype == "Lamp":
@@ -123,7 +179,19 @@ class NetI(x10.Net):
       if i.name == name:
         return i.active
   
-   
+  def checkAlarm (self, current=None):
+    while True:
+      if status == 1:
+        break
+      now = datetime.datetime.now()
+      t = str(now.hour).zfill(2)  + ":" + str(now.minute)
+      for i in Modules:
+        if i.alarm_act:
+          if t == i.alarm_start:
+            i.setActive()
+          if t == i.alarm_end:
+            i.setInactive()
+      time.sleep(1)    
 
   def checkSensor (self, current=None):
     sys.stdout.write(txt.warning("Monitoring sensor modules...\t"))
@@ -144,17 +212,16 @@ class NetI(x10.Net):
             if out.find("rcvi func           On : hc") != -1:
               print txt.warning("  Module '" + txt.bold(i.name)) + txt.warning("' has been activated.")
               i.setActive()
+              self.doRules(i.name, True)
               break
             if out.find("rcvi func          Off : hc") != -1:
               print txt.warning("  Module '" + txt.bold(i.name)) + txt.warning("' has been deactivated.")
               i.setInactive()
+              self.doRules(i.name, False)
               break
         if found == False:
           print txt.warning("  Recognised module not added before. Now added as noName.")
-          if out.find("rcvi func           On : hc") != -1:
-            self.addModule("noName", mcode, "Unknown", True)  
-          if out.find("rcvi func          Off : hc") != -1:
-            self.addModule("noName", mcode, "Unknown", False)  
+          self.addModule("noName", mcode, "Unknown", False)  
           for i in Modules:
             if i.code == mcode and i.isSensor:
               if out.find("rcvi func           On : hc") != -1:
@@ -216,6 +283,9 @@ try:
     
     thread = Thread(target = object.checkSensor)
     thread.start()
+    
+    threadalarm = Thread(target = object.checkAlarm)
+    threadalarm.start()
     
     ic.waitForShutdown()
 except:

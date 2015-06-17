@@ -51,7 +51,7 @@ class viewGUI:
 
   def __init__(self, propsx10 = None, propscam= None, propstmp= None, propskin= None, propsoth=None):
     self.builder = Gtk.Builder()
-    self.builder.add_from_file("security.glade")
+    self.builder.add_from_file("HomeGuardian.glade")
     self.builder.connect_signals(self)
     self.window = self.builder.get_object("window1")
     self.window.connect("delete-event", Gtk.main_quit)
@@ -115,7 +115,7 @@ class viewGUI:
 
     self.notebook.append_page(self.vbox, Gtk.Label("Camera"))
     self.notebook.append_page(self.vboxkinect, Gtk.Label("Kinect"))
-    self.notebook.append_page(self.vbox3, Gtk.Label("Other"))
+    self.notebook.append_page(self.vbox3, Gtk.Label("Configuration"))
     
     #threading.Thread(target=self.askdformods).start()
     #threading.Thread(target=self.checkAlarm).start()
@@ -444,7 +444,7 @@ class viewGUI:
     self.checkbut = Gtk.CheckButton(label="Send Mail when motion")
     self.motiontable.attach(self.checkbut, 0, 1, 3, 4,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable.attach(Gtk.Label("Record options"), 0, 1, 4, 5,yoptions=Gtk.AttachOptions.SHRINK)
-    self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when activation of")
+    self.radbut1 = Gtk.RadioButton(group=self.radbut3,label="Record when motion of")
     self.motiontable.attach(self.radbut1, 0, 1, 5, 6,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable.attach(Gtk.Label("Camera"), 1, 2, 5, 6,yoptions=Gtk.AttachOptions.SHRINK)
     self.vbox.pack_start(self.motiontable, True, True, 0)
@@ -475,7 +475,7 @@ class viewGUI:
     
     
     self.motiontable2 = Gtk.Table(2, 2, False)
-    self.radbut2 = Gtk.RadioButton(group=self.radbut3, label="Record when motion of")
+    self.radbut2 = Gtk.RadioButton(group=self.radbut3, label="Record when activation of")
     self.motiontable2.attach(self.radbut2, 0, 1, 0, 1,yoptions=Gtk.AttachOptions.SHRINK)
     self.motiontable2.attach(self.radbut3, 0, 1, 1, 2,yoptions=Gtk.AttachOptions.SHRINK)
     self.combomotion = Gtk.ComboBoxText()
