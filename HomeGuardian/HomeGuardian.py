@@ -90,8 +90,7 @@ class viewGUI:
 
     
     
-    if propstmp:
-      self.checkTempcfg(propstmp)
+    
       
     
     
@@ -110,7 +109,8 @@ class viewGUI:
       self.notebook.append_page(self.vbox2, Gtk.Label("Environment"))
     
     
-    
+    if propstmp:
+      self.checkTempcfg(propstmp)
     
 
     self.notebook.append_page(self.vbox, Gtk.Label("Camera"))
@@ -252,7 +252,7 @@ class viewGUI:
         f.write("x10.Module."+i.code+".alarm_act="+  str(i.alarm_act) +"\n")
         f.write("x10.Module."+i.code+".alarm_start="+  i.alarm_start +"\n")
         f.write("x10.Module."+i.code+".alarm_end="+  i.alarm_end +"\n")
-        f.write("x10.Module."+i.code+".mail_alert="+  i.mail_alert +"\n")
+        f.write("x10.Module."+i.code+".mail_alert="+  str(i.mail_alert) +"\n")
         a = 0
         first = True
         for n in i.rules:
@@ -275,7 +275,7 @@ class viewGUI:
     if self.Temperature[0] != "" and self.Temperature[1] != 0:
       f.write("# Temperature configuration \n")
       f.write("tmp.Proxy=Temperature:default -h "+self.Temperature[0]+" -p " + self.Temperature[1] +"\n")
-      f.write("tmp.use_Celsius=" + temp_celsius +"\n")
+      f.write("tmp.use_Celsius=" + str(self.temp_celsius) +"\n")
       b=0
       first = True
       for y in self.temp_rules:
@@ -488,18 +488,36 @@ class viewGUI:
     self.radbut3.connect("toggled", self.motionrec_tog, 3)
     
   def load_sensors_combotext(self, widget):
+    actual = widget.get_active_text()
     widget.remove_all()
+    n = 0
+    m = -1
     for i in self.Modus:
       if i.isSensor():
         widget.append_text("("+i.code+") "+i.name)
-    widget.set_active(0)
+        if actual == "("+i.code+") "+i.name:
+          m = n
+        n += 1
+    if m == -1:
+      widget.set_active(0)
+    else:
+      widget.set_active(m)
     
   def load_actuator_combotext(self, widget):
+    actual = widget.get_active_text()
     widget.remove_all()
+    n = 0
+    m = -1
     for i in self.Modus:
       if not i.isSensor():
         widget.append_text("("+i.code+") "+i.name)
-    widget.set_active(0)
+        if actual == "("+i.code+") "+i.name:
+          m = n
+        n += 1
+    if m == -1:
+      widget.set_active(0)
+    else:
+      widget.set_active(m)
   
   def motionrec_tog (self, button, n):
     if n == 1:
@@ -744,11 +762,15 @@ class viewGUI:
             
             self.send_mail("Kinect", [my_mime_image,my_mime_image2])
         
-        if n > 0:
+        if n == 0:
+          fir = True
+            
+        if n > 0 and fir == True:
           if self.checkbutkinAct.get_active():
             self.camera_act(self.combomotionkinectAct.get_active_text(), self.combomotionkinect.get_active_text())
           if self.checkbutkinAct2.get_active():
             self.camera_act(self.combomotionkinectAct2.get_active_text(), self.combomotionkinect2.get_active_text())
+          fir = False
         Gdk.threads_leave()
         
       else:
@@ -897,11 +919,16 @@ class viewGUI:
             ima.save(outbuf, format="PNG")
             my_mime_image = MIMEImage(outbuf.getvalue(), name="Capture_"+str(datetime.now()))
             self.send_mail("Camera", [my_mime_image])
-        if n > 0:
+            
+        if n == 0:
+          fir = True
+            
+        if n > 0 and fir == True:
           if self.checkbutcamAct.get_active():
             self.camera_act(self.combomotioncamAct.get_active_text(), self.combomotioncam.get_active_text())
           if self.checkbutcamAct2.get_active():
             self.camera_act(self.combomotioncamAct2.get_active_text(), self.combomotioncam2.get_active_text())
+          fir = False
         Gdk.threads_leave()
 
     
@@ -1089,9 +1116,12 @@ class viewGUI:
       for n in self.Modus:
         if n.name == to.split(")")[1][1:]:
           if do == "Activate":
-            self.net.setActive(n.name)
+            if n.active == False:
+              threading.Thread(target=self.net.setActive, args=[n.name]).start()
+              
           else:
-            self.net.setInactive(n.name)
+            if n.active == True:
+              threading.Thread(target=self.net.setInactive, args=[n.name]).start()
           break
         
         
@@ -1665,9 +1695,9 @@ class viewGUI:
   def on_actModule(self, button, event, mod):
     
     if mod.active:
-      self.net.setInactive(mod.name)
+      threading.Thread(target=self.net.setInactive, args=[mod.name]).start()
     else:
-      self.net.setActive(mod.name)
+      threading.Thread(target=self.net.setActive, args=[mod.name]).start()
     self.table.destroy()
     self.modtable()
 

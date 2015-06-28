@@ -14,16 +14,6 @@ class TemperatureI(Temp.Temperature):
       return T
     elif n == 2:
       return T2
-      
-  def getTemperature1C(self, current=None):
-    return T 
-  def getTemperature1F(self, current=None):
-    return TF
-  def getTemperature2C(self, current=None):
-    return T2
-  def getTemperature2F(self, current=None):
-    return TF2
-    
     
 
 
